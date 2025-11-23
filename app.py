@@ -554,6 +554,34 @@ def render_incident_log_page():
     st.markdown(f"## 📝 Incident Log — {student['name']}")
     show_severity_guide()
     
+    # Check if we just logged a critical incident
+    if "show_critical_prompt" not in st.session_state:
+        st.session_state.show_critical_prompt = False
+    
+    # Show critical incident prompt if needed
+    if st.session_state.show_critical_prompt:
+        inc_info = st.session_state.get("last_incident_info", {})
+        
+        if inc_info.get("severity", 0) >= 3:
+            st.warning(f"⚠️ **Severity {inc_info['severity']} Detected** - Critical Incident Form Required")
+        else:
+            st.warning("⚠️ **Critical Incident Flagged** - Critical Incident Form Required")
+        
+        st.info("Please complete the Critical Incident ABCH form to document this event fully.")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("📋 Complete Critical Form Now", type="primary", key="crit_now", use_container_width=True):
+                st.session_state.show_critical_prompt = False
+                go_to("critical_incident", current_incident_id=st.session_state.current_incident_id)
+        with col2:
+            if st.button("Skip for Now", key="crit_later", use_container_width=True):
+                st.session_state.show_critical_prompt = False
+                go_to("program_students", selected_program=student["program"])
+        
+        st.markdown("---")
+        st.stop()  # Stop rendering the form below
+    
     # EMPTY FORM - NO PREFILLS
     with st.form("incident_form", clear_on_submit=True):
         col1, col2 = st.columns(2)
@@ -598,22 +626,13 @@ def render_incident_log_page():
             
             # TRIGGER CRITICAL FORM at severity 3+ OR if manually flagged
             if is_critical:
-                if severity >= 3:
-                    st.warning(f"⚠️ **Severity {severity} Detected** - Critical Incident Form Required")
-                else:
-                    st.warning("⚠️ **Critical Incident Flagged** - Critical Incident Form Required")
-                
-                st.info("Please complete the Critical Incident ABCH form to document this event fully.")
                 st.session_state.current_incident_id = new_id
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    if st.button("Complete Critical Form Now", type="primary", key="crit_now", use_container_width=True):
-                        go_to("critical_incident", current_incident_id=new_id)
-                with col2:
-                    if st.button("Complete Later", key="crit_later", use_container_width=True):
-                        go_to("program_students", selected_program=student["program"])
+                st.session_state.show_critical_prompt = True
+                st.session_state.last_incident_info = {"severity": severity, "manual": manual_critical}
+                st.rerun()
             else:
+                # Not critical, show back button
+                st.markdown("---")
                 if st.button("↩️ Back to Students", key="back_after_log"):
                     go_to("program_students", selected_program=student["program"])
 
@@ -1173,3 +1192,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
