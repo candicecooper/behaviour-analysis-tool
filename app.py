@@ -6,7 +6,6 @@ from datetime import datetime, date, time, timedelta
 import uuid
 import random
 from io import BytesIO
-import base64
 
 st.set_page_config(page_title="CLC Behaviour Support", page_icon="📊", layout="wide", initial_sidebar_state="collapsed")
 
@@ -156,6 +155,11 @@ def show_severity_guide():
                 <div style='color: #f1f5f9; font-size: 0.8rem; line-height: 1.3;'>Severe violence</div>
             </div>
         </div>
+        <div style='margin-top: 1rem; padding: 0.75rem; background: #fffbeb; border-radius: 6px; border-left: 4px solid #f59e0b;'>
+            <div style='color: #92400e; font-weight: 600; font-size: 0.85rem;'>
+                ⚠️ Severity 3 or above requires a Critical Incident ABCH Form
+            </div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -170,11 +174,6 @@ def send_critical_incident_email(incident_data, student, staff_email):
 
 *(In production, this sends via SMTP)*
     """)
-
-def create_graph_base64(fig):
-    """Convert plotly figure to base64 PNG for Word doc"""
-    img_bytes = fig.to_image(format="png", width=600, height=400)
-    return base64.b64encode(img_bytes).decode()
 
 def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, top_loc, top_session, risk_score, risk_level):
     """Generate Word doc WITH graphs as embedded images"""
@@ -246,12 +245,13 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
             fig1.update_layout(
                 height=300, width=600, showlegend=False,
                 plot_bgcolor='white', paper_bgcolor='white',
-                margin=dict(l=40, r=40, t=40, b=40)
+                margin=dict(l=40, r=40, t=40, b=40),
+                xaxis_title="Date", yaxis_title="Count"
             )
             img_path1 = "/tmp/daily_freq.png"
             fig1.write_image(img_path1)
             doc.add_picture(img_path1, width=Inches(5.5))
-            doc.add_paragraph("Shows the pattern of incidents over time.")
+            doc.add_paragraph("Daily pattern of incidents over time.")
             doc.add_paragraph()
             
             # Graph 2: Top Behaviours
@@ -266,7 +266,8 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
             fig2.update_layout(
                 height=300, width=600, showlegend=False,
                 plot_bgcolor='white', paper_bgcolor='white',
-                margin=dict(l=40, r=40, t=40, b=40)
+                margin=dict(l=40, r=40, t=40, b=40),
+                xaxis_title="Frequency"
             )
             img_path2 = "/tmp/top_behaviours.png"
             fig2.write_image(img_path2)
@@ -286,12 +287,82 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
             fig3.update_layout(
                 height=300, width=600, showlegend=False,
                 plot_bgcolor='white', paper_bgcolor='white',
-                margin=dict(l=40, r=40, t=40, b=40)
+                margin=dict(l=40, r=40, t=40, b=40),
+                xaxis_title="Frequency"
             )
             img_path3 = "/tmp/top_triggers.png"
             fig3.write_image(img_path3)
             doc.add_picture(img_path3, width=Inches(5.5))
             doc.add_paragraph(f"Key trigger: {ant_counts.index[0]}")
+            doc.add_paragraph()
+            
+            # Graph 4: Severity Trend
+            doc.add_heading('Severity Over Time', 2)
+            fig4 = go.Figure()
+            fig4.add_trace(go.Scatter(
+                x=full_df["date_parsed"], y=full_df["severity"],
+                mode='markers', marker=dict(size=8, color='#334155', opacity=0.6)
+            ))
+            if len(full_df) >= 2:
+                z = np.polyfit(range(len(full_df)), full_df["severity"], 1)
+                p = np.poly1d(z)
+                fig4.add_trace(go.Scatter(
+                    x=full_df["date_parsed"], y=p(range(len(full_df))),
+                    mode='lines', line=dict(color='#94a3b8', width=2, dash='dash'),
+                    name='Trend'
+                ))
+            fig4.update_layout(
+                height=300, width=600, showlegend=False, yaxis=dict(range=[0, 6]),
+                plot_bgcolor='white', paper_bgcolor='white',
+                margin=dict(l=40, r=40, t=40, b=40),
+                xaxis_title="Date", yaxis_title="Severity"
+            )
+            img_path4 = "/tmp/severity_trend.png"
+            fig4.write_image(img_path4)
+            doc.add_picture(img_path4, width=Inches(5.5))
+            doc.add_paragraph("Severity pattern with trend line.")
+            doc.add_paragraph()
+            
+            # Graph 5: Location Hotspots
+            doc.add_heading('Location Hotspots', 2)
+            loc_counts = full_df["location"].value_counts().head(5)
+            fig5 = go.Figure()
+            fig5.add_trace(go.Bar(
+                y=loc_counts.index, x=loc_counts.values,
+                orientation='h', marker=dict(color='#64748b'),
+                text=loc_counts.values, textposition='outside'
+            ))
+            fig5.update_layout(
+                height=300, width=600, showlegend=False,
+                plot_bgcolor='white', paper_bgcolor='white',
+                margin=dict(l=40, r=40, t=40, b=40),
+                xaxis_title="Frequency"
+            )
+            img_path5 = "/tmp/location_hotspots.png"
+            fig5.write_image(img_path5)
+            doc.add_picture(img_path5, width=Inches(5.5))
+            doc.add_paragraph(f"Most incidents occur in: {loc_counts.index[0]}")
+            doc.add_paragraph()
+            
+            # Graph 6: Time of Day
+            doc.add_heading('Time of Day Patterns', 2)
+            session_counts = full_df["session"].value_counts()
+            fig6 = go.Figure()
+            fig6.add_trace(go.Bar(
+                x=session_counts.index, y=session_counts.values,
+                marker=dict(color='#475569'),
+                text=session_counts.values, textposition='outside'
+            ))
+            fig6.update_layout(
+                height=300, width=600, showlegend=False,
+                plot_bgcolor='white', paper_bgcolor='white',
+                margin=dict(l=40, r=40, t=40, b=40),
+                yaxis_title="Frequency"
+            )
+            img_path6 = "/tmp/time_patterns.png"
+            fig6.write_image(img_path6)
+            doc.add_picture(img_path6, width=Inches(5.5))
+            doc.add_paragraph(f"Peak time: {session_counts.index[0]}")
             
         except Exception as e:
             doc.add_paragraph(f"Note: Graphs could not be generated. Error: {str(e)}")
@@ -396,7 +467,7 @@ def generate_mock_incidents(n=70):
             "location": random.choice(LOCATIONS), "behaviour_type": random.choice(BEHAVIOUR_TYPES),
             "antecedent": random.choice(ANTECEDENTS), "intervention": random.choice(INTERVENTIONS),
             "severity": sev, "reported_by": random.choice(MOCK_STAFF)["name"],
-            "description": "Mock incident", "is_critical": sev >= 4, "duration_minutes": random.randint(2, 25)
+            "description": "Mock incident", "is_critical": sev >= 3, "duration_minutes": random.randint(2, 25)
         })
     return incidents
 
@@ -497,15 +568,21 @@ def render_incident_log_page():
         
         duration = st.number_input("Duration (minutes) *", min_value=1, value=1, key="inc_dur")
         severity = st.slider("Severity Level (see guide above) *", 1, 5, 1, key="inc_sev")
-        description = st.text_area("Brief Description *", placeholder="Factual, objective description of what occurred...", key="inc_desc")
+        description = st.text_area("Brief Description (Optional)", placeholder="Factual, objective description of what occurred...", key="inc_desc")
+        
+        # OPTION TO MANUALLY TRIGGER CRITICAL FORM
+        manual_critical = st.checkbox("This incident requires a Critical Incident ABCH Form (regardless of severity)", key="manual_crit")
         
         submitted = st.form_submit_button("Submit Incident", type="primary")
     
     if submitted:
-        if not location or not behaviour or not antecedent or not intervention or not description:
+        if not location or not behaviour or not antecedent or not intervention:
             st.error("Please complete all required fields marked with *")
         else:
             new_id = str(uuid.uuid4())
+            # Critical if severity >=3 OR manually flagged
+            is_critical = (severity >= 3) or manual_critical
+            
             rec = {
                 "id": new_id, "student_id": student_id, "student_name": student["name"],
                 "date": inc_date.isoformat(), "time": inc_time.strftime("%H:%M:%S"),
@@ -513,14 +590,20 @@ def render_incident_log_page():
                 "location": location, "behaviour_type": behaviour, "antecedent": antecedent,
                 "intervention": intervention, "severity": severity,
                 "reported_by": st.session_state.current_user["name"],
-                "duration_minutes": duration, "description": description, "is_critical": severity >= 4
+                "duration_minutes": duration, "description": description or "", 
+                "is_critical": is_critical
             }
             st.session_state.incidents.append(rec)
             st.success("✅ Incident logged successfully")
             
-            if severity >= 4:
-                st.warning("⚠️ **Critical Incident Detected** (Severity 4 or 5)")
-                st.info("A Critical Incident ABCH form must be completed for this incident.")
+            # TRIGGER CRITICAL FORM at severity 3+ OR if manually flagged
+            if is_critical:
+                if severity >= 3:
+                    st.warning(f"⚠️ **Severity {severity} Detected** - Critical Incident Form Required")
+                else:
+                    st.warning("⚠️ **Critical Incident Flagged** - Critical Incident Form Required")
+                
+                st.info("Please complete the Critical Incident ABCH form to document this event fully.")
                 st.session_state.current_incident_id = new_id
                 
                 col1, col2 = st.columns(2)
@@ -627,7 +710,7 @@ def render_critical_incident_page():
         safety_updated = st.checkbox("Safety plan updated", key="outcome_safety")
         transport = st.checkbox("Transport home required", key="outcome_transport")
     
-    other_actions = st.text_area("Other actions / follow-up required", 
+    other_actions = st.text_area("Other actions / follow-up required (Optional)", 
                                  placeholder="Any additional actions taken or required...",
                                  key="outcome_other")
     
@@ -679,7 +762,7 @@ def render_student_analysis_page():
         st.error("No student selected")
         return
     
-    st.markdown(f"## 📊 Data Analysis — {student['name']}")
+    st.markdown(f"## 📊 Comprehensive Data Analysis — {student['name']}")
     
     quick = [i for i in st.session_state.incidents if i["student_id"] == student_id]
     crit = [c for c in st.session_state.critical_incidents if c["student_id"] == student_id]
@@ -707,20 +790,26 @@ def render_student_analysis_page():
     
     full_df = pd.concat([quick_df, crit_df], ignore_index=True).sort_values("date_parsed")
     
+    # Add hour column
+    full_df["hour"] = pd.to_datetime(full_df["time"], format="%H:%M:%S", errors="coerce").dt.hour
+    full_df["day_of_week"] = full_df["date_parsed"].dt.day_name()
+    
     # OVERVIEW
-    st.markdown("### Overview")
-    col1, col2, col3, col4 = st.columns(4)
+    st.markdown("### 📈 Executive Summary")
+    col1, col2, col3, col4, col5 = st.columns(5)
     with col1: st.metric("Total", len(full_df))
     with col2: st.metric("Critical", len(full_df[full_df["incident_type"] == "Critical"]))
     with col3: st.metric("Avg Severity", f"{full_df['severity'].mean():.1f}")
     with col4:
         days = max((full_df["date_parsed"].max() - full_df["date_parsed"].min()).days, 1)
+        st.metric("Days Span", days)
+    with col5:
         st.metric("Per Day", f"{len(full_df) / days:.1f}")
     
     st.markdown("---")
     
     # GRAPH 1: Daily Frequency
-    st.markdown("### 📅 Incident Frequency")
+    st.markdown("### 📅 Daily Incident Frequency")
     daily = full_df.groupby(full_df["date_parsed"].dt.date).size().reset_index(name="count")
     fig1 = go.Figure()
     fig1.add_trace(go.Scatter(
@@ -784,7 +873,7 @@ def render_student_analysis_page():
     st.markdown("---")
     
     # GRAPH 4: Severity Trend
-    st.markdown("### 📊 Severity Trend")
+    st.markdown("### 📊 Severity Over Time")
     fig4 = go.Figure()
     fig4.add_trace(go.Scatter(
         x=full_df["date_parsed"], y=full_df["severity"],
@@ -812,8 +901,145 @@ def render_student_analysis_page():
     
     st.markdown("---")
     
+    # GRAPH 5: Location Hotspots
+    st.markdown("### 📍 Location Hotspots")
+    loc_counts = full_df["location"].value_counts().head(5)
+    fig5 = go.Figure()
+    fig5.add_trace(go.Bar(
+        y=loc_counts.index, x=loc_counts.values,
+        orientation='h', marker=dict(color='#64748b'),
+        text=loc_counts.values, textposition='outside'
+    ))
+    fig5.update_layout(
+        height=280, showlegend=False, xaxis_title="Frequency",
+        plot_bgcolor='white', paper_bgcolor='white',
+        font=dict(color='#334155', size=11)
+    )
+    st.plotly_chart(fig5, use_container_width=True)
+    
+    with st.expander("💡 Interpretation"):
+        st.markdown(f"Most incidents occur in **{loc_counts.index[0]}**. Consider environmental modifications or increased support in this location.")
+    
+    st.markdown("---")
+    
+    # GRAPH 6: Time of Day
+    st.markdown("### ⏰ Time of Day Patterns")
+    session_counts = full_df["session"].value_counts()
+    fig6 = go.Figure()
+    fig6.add_trace(go.Bar(
+        x=session_counts.index, y=session_counts.values,
+        marker=dict(color='#475569'),
+        text=session_counts.values, textposition='outside'
+    ))
+    fig6.update_layout(
+        height=280, showlegend=False, yaxis_title="Frequency",
+        plot_bgcolor='white', paper_bgcolor='white',
+        font=dict(color='#334155', size=11)
+    )
+    st.plotly_chart(fig6, use_container_width=True)
+    
+    with st.expander("💡 Interpretation"):
+        st.markdown(f"Peak time: **{session_counts.index[0]}**. Provide proactive regulation supports before this period begins.")
+    
+    st.markdown("---")
+    
+    # GRAPH 7: Day of Week
+    st.markdown("### 📆 Day of Week Patterns")
+    day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    day_counts = full_df["day_of_week"].value_counts().reindex(day_order, fill_value=0)
+    fig7 = go.Figure()
+    fig7.add_trace(go.Bar(
+        x=day_counts.index, y=day_counts.values,
+        marker=dict(color='#64748b'),
+        text=day_counts.values, textposition='outside'
+    ))
+    fig7.update_layout(
+        height=280, showlegend=False, yaxis_title="Frequency",
+        plot_bgcolor='white', paper_bgcolor='white',
+        font=dict(color='#334155', size=11)
+    )
+    st.plotly_chart(fig7, use_container_width=True)
+    
+    with st.expander("💡 Interpretation"):
+        high_day = day_counts.idxmax()
+        st.markdown(f"**{high_day}** has the most incidents. Consider what makes this day different (e.g., transitions, fatigue, specific activities).")
+    
+    st.markdown("---")
+    
+    # GRAPH 8: Hour Heatmap
+    if "hour" in full_df.columns and full_df["hour"].notna().any():
+        st.markdown("### 🔥 Hour-by-Hour Heatmap")
+        hour_counts = full_df["hour"].value_counts().sort_index()
+        fig8 = go.Figure()
+        fig8.add_trace(go.Bar(
+            x=hour_counts.index, y=hour_counts.values,
+            marker=dict(color='#475569'),
+            text=hour_counts.values, textposition='outside'
+        ))
+        fig8.update_layout(
+            height=280, showlegend=False, xaxis_title="Hour of Day", yaxis_title="Frequency",
+            plot_bgcolor='white', paper_bgcolor='white',
+            font=dict(color='#334155', size=11)
+        )
+        st.plotly_chart(fig8, use_container_width=True)
+        
+        with st.expander("💡 Interpretation"):
+            peak_hour = hour_counts.idxmax()
+            st.markdown(f"Peak hour: **{peak_hour}:00**. Schedule check-ins and breaks around this time.")
+        
+        st.markdown("---")
+    
+    # GRAPH 9: Intervention Effectiveness
+    st.markdown("### 🎯 Intervention Effectiveness")
+    interv_sev = full_df.groupby("intervention").agg({"severity": ["mean", "count"]}).reset_index()
+    interv_sev.columns = ["intervention", "avg_severity", "count"]
+    interv_sev = interv_sev[interv_sev["count"] >= 2].sort_values("avg_severity")
+    
+    if len(interv_sev) > 0:
+        fig9 = go.Figure()
+        fig9.add_trace(go.Bar(
+            y=interv_sev["intervention"], x=interv_sev["avg_severity"],
+            orientation='h', marker=dict(color='#64748b'),
+            text=interv_sev["avg_severity"].round(1), textposition='outside'
+        ))
+        fig9.update_layout(
+            height=280, showlegend=False, xaxis_title="Average Severity (Lower = Better)",
+            plot_bgcolor='white', paper_bgcolor='white',
+            font=dict(color='#334155', size=11), xaxis=dict(range=[0, 5.5])
+        )
+        st.plotly_chart(fig9, use_container_width=True)
+        
+        with st.expander("💡 Interpretation"):
+            best_interv = interv_sev.iloc[0]["intervention"]
+            st.markdown(f"**{best_interv}** is associated with lowest severity. Use this strategy more frequently.")
+    
+    st.markdown("---")
+    
+    # GRAPH 10: Duration Analysis
+    if "duration_minutes" in full_df.columns:
+        st.markdown("### ⏱️ Incident Duration by Behaviour")
+        dur_by_beh = full_df.groupby("behaviour_type")["duration_minutes"].mean().sort_values(ascending=False).head(5)
+        fig10 = go.Figure()
+        fig10.add_trace(go.Bar(
+            y=dur_by_beh.index, x=dur_by_beh.values,
+            orientation='h', marker=dict(color='#475569'),
+            text=dur_by_beh.round(1), textposition='outside'
+        ))
+        fig10.update_layout(
+            height=280, showlegend=False, xaxis_title="Average Duration (minutes)",
+            plot_bgcolor='white', paper_bgcolor='white',
+            font=dict(color='#334155', size=11)
+        )
+        st.plotly_chart(fig10, use_container_width=True)
+        
+        with st.expander("💡 Interpretation"):
+            st.markdown(f"**{dur_by_beh.index[0]}** has longest average duration ({dur_by_beh.values[0]:.1f} min). Focus de-escalation training on this behaviour.")
+        
+        st.markdown("---")
+    
     # RISK SCORE
-    st.markdown("### 🎲 Risk Assessment")
+    st.markdown("### 🎲 Current Risk Assessment")
+    
     recent = full_df.tail(7)
     risk_score = min(100, int(
         (len(recent) / 7 * 10) +
@@ -854,34 +1080,35 @@ def render_student_analysis_page():
     top_session = full_df["session"].mode()[0] if len(full_df) > 0 else "Unknown"
     
     st.info(f"""
-    **Key Patterns:**
+    **Key Patterns Identified:**
     - Primary behaviour: **{top_beh}**
     - Main trigger: **{top_ant}**
-    - Hotspot: **{top_loc}** during **{top_session}**
+    - Hotspot location: **{top_loc}**
+    - Peak time: **{top_session}**
     
-    **Interpretation:** {student['name']} is most vulnerable when "{top_ant}" occurs in {top_loc} during {top_session}. 
+    **Clinical Interpretation:** {student['name']} is most vulnerable when "{top_ant}" occurs in {top_loc} during {top_session}. 
     This behaviour is a safety strategy. Use CPI Supportive stance and co-regulation.
     """)
     
     st.success(f"""
-    **Recommendations:**
-    1. Proactive check-in before "{top_ant}", regulated start before {top_session}
-    2. CPI Supportive stance, low voice, reduce audience
-    3. Teach help-seeking linked to Personal & Social Capability
-    4. SMART Goal: Over 5 weeks, use help-seeking in 4/5 opportunities
+    **Evidence-Based Recommendations:**
+    1. **Proactive:** Check-in before "{top_ant}", regulated start before {top_session}
+    2. **In-the-moment:** CPI Supportive stance, low voice, reduce audience
+    3. **Teaching:** Link to Personal & Social Capability, teach help-seeking
+    4. **SMART Goal:** Over 5 weeks, use help-seeking strategy in 4/5 opportunities with support
     """)
     
     st.markdown("---")
     
     # EXPORT
-    st.markdown("### 📄 Export Data")
+    st.markdown("### 📄 Export Data & Reports")
     
     col1, col2 = st.columns(2)
     
     with col1:
         csv = full_df.to_csv(index=False)
         st.download_button(
-            "📥 Download CSV",
+            "📥 Download Raw Data (CSV)",
             csv,
             file_name=f"{student['name']}_data.csv",
             mime="text/csv",
@@ -924,4 +1151,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
