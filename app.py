@@ -700,8 +700,26 @@ def render_critical_incident_page():
          "First Aid Officer", "Injury report completed", "Transport arranged"],
         key="notif")
     
+    # INTENDED OUTCOMES
+    st.markdown("### Intended Outcomes")
+    st.caption("What are we aiming to achieve through this intervention?")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("**Short-term goals (next 1-2 weeks):**")
+        short_term = st.text_area("", placeholder="e.g., Student will use help-seeking gesture when frustrated", 
+                                 key="intended_short", height=100, label_visibility="collapsed")
+    with col2:
+        st.markdown("**Long-term goals (4-6 weeks):**")
+        long_term = st.text_area("", placeholder="e.g., Student will independently use break card in 4/5 opportunities", 
+                                key="intended_long", height=100, label_visibility="collapsed")
+    
+    st.markdown("---")
+    
     # OUTCOME
-    st.markdown("### Outcome")
+    st.markdown("### Immediate Outcome")
+    st.caption("What happened as a result of this specific incident?")
+    
     col1, col2 = st.columns(2)
     with col1:
         removed = st.checkbox("Student removed from learning", key="outcome_removed")
@@ -729,6 +747,10 @@ def render_critical_incident_page():
                 "ABCH_additional": st.session_state.abch_rows.copy(),
                 "safety_responses": safety,
                 "notifications": notifications,
+                "intended_outcomes": {
+                    "short_term": short_term,
+                    "long_term": long_term
+                },
                 "outcomes": {
                     "removed": removed,
                     "family_contact": family_contact,
