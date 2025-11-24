@@ -231,17 +231,22 @@ Admin summary included for departmental log.
     """)
 
 
+
 def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, top_loc, top_session, risk_score, risk_level):
-    """Generate comprehensive BAP with embedded graphs - Berry Street & Learning and Behaviour Unit"""
+    """Generate comprehensive BAP with matplotlib graphs (no Chrome/Kaleido needed)"""
     try:
         from docx import Document
         from docx.shared import Inches, Pt, RGBColor
         from docx.enum.text import WD_ALIGN_PARAGRAPH
-        import plotly.graph_objects as go
+        import matplotlib.pyplot as plt
+        import matplotlib
+        matplotlib.use('Agg')
+        
+        PROGRAM_NAMES = {"JP": "Junior Primary", "PY": "Primary Years", "SY": "Senior Years"}
         
         doc = Document()
         
-        # TITLE PAGE
+        # TITLE
         title = doc.add_heading('Behaviour Analysis Plan', 0)
         title.alignment = WD_ALIGN_PARAGRAPH.CENTER
         subtitle = doc.add_paragraph('Evidence-Based Analysis & Recommendations')
@@ -251,7 +256,6 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
             run.font.color.rgb = RGBColor(100, 116, 139)
         
         doc.add_paragraph()
-        
         branding = doc.add_paragraph('Prepared by: Learning and Behaviour Unit')
         branding.alignment = WD_ALIGN_PARAGRAPH.CENTER
         for run in branding.runs:
@@ -278,7 +282,7 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
         
         doc.add_paragraph()
         
-        # EXECUTIVE SUMMARY
+        # SUMMARY
         doc.add_heading('Executive Summary', 1)
         summary = doc.add_paragraph()
         summary.add_run('Total Incidents: ').bold = True
@@ -292,7 +296,7 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
         
         doc.add_paragraph()
         
-        # KEY FINDINGS
+        # FINDINGS
         doc.add_heading('Key Findings', 1)
         findings = doc.add_paragraph()
         findings.add_run('Primary Behaviour: ').bold = True
@@ -306,201 +310,172 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
         
         doc.add_page_break()
         
-        # VISUAL ANALYTICS
+        # GRAPHS WITH MATPLOTLIB
         doc.add_heading('Visual Analytics', 1)
         doc.add_paragraph('The following graphs provide visual representation of incident patterns and trends.')
+        
+        plt.style.use('default')
         
         # GRAPH 1: Daily Frequency
         doc.add_heading('1. Daily Incident Frequency', 2)
         daily = full_df.groupby(full_df["date_parsed"].dt.date).size().reset_index(name="count")
-        fig1 = go.Figure()
-        fig1.add_trace(go.Scatter(
-            x=daily["date_parsed"], y=daily["count"],
-            mode='lines+markers', line=dict(color='#334155', width=3),
-            marker=dict(size=8), fill='tozeroy', fillcolor='rgba(51, 65, 85, 0.15)'
-        ))
-        fig1.update_layout(
-            width=700, height=350, showlegend=False,
-            plot_bgcolor='white', paper_bgcolor='white',
-            margin=dict(l=60, r=60, t=40, b=60),
-            xaxis_title="Date", yaxis_title="Incident Count",
-            font=dict(size=12)
-        )
-        img1 = "/tmp/graph1_daily.png"
-        fig1.write_image(img1, width=700, height=350, scale=2)
-        doc.add_picture(img1, width=Inches(6))
-        doc.add_paragraph("Daily incident frequency shows temporal patterns and potential correlations with external factors.")
+        fig, ax = plt.subplots(figsize=(8, 4), dpi=150)
+        ax.plot(daily["date_parsed"], daily["count"], marker='o', linewidth=2, markersize=5, color='#334155')
+        ax.fill_between(daily["date_parsed"], daily["count"], alpha=0.2, color='#334155')
+        ax.set_xlabel('Date', fontsize=11, fontweight='bold')
+        ax.set_ylabel('Incident Count', fontsize=11, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+        img_buffer = BytesIO()
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+        img_buffer.seek(0)
+        doc.add_picture(img_buffer, width=Inches(6))
+        plt.close()
+        doc.add_paragraph("Daily incident frequency shows temporal patterns.")
         doc.add_paragraph()
         
-        # GRAPH 2: Top Behaviours
+        # GRAPH 2: Behaviours
         doc.add_heading('2. Most Common Behaviours', 2)
         beh_counts = full_df["behaviour_type"].value_counts().head(5)
-        fig2 = go.Figure()
-        fig2.add_trace(go.Bar(
-            y=beh_counts.index, x=beh_counts.values,
-            orientation='h', marker=dict(color='#334155'),
-            text=beh_counts.values, textposition='outside',
-            textfont=dict(size=14)
-        ))
-        fig2.update_layout(
-            width=700, height=350, showlegend=False,
-            plot_bgcolor='white', paper_bgcolor='white',
-            margin=dict(l=150, r=60, t=40, b=60),
-            xaxis_title="Frequency", font=dict(size=12)
-        )
-        img2 = "/tmp/graph2_behaviours.png"
-        fig2.write_image(img2, width=700, height=350, scale=2)
-        doc.add_picture(img2, width=Inches(6))
-        doc.add_paragraph(f"Primary behaviour: {beh_counts.index[0]} ({beh_counts.values[0]} incidents). Intervention planning should prioritize this behaviour.")
+        fig, ax = plt.subplots(figsize=(8, 4), dpi=150)
+        ax.barh(beh_counts.index, beh_counts.values, color='#334155')
+        ax.set_xlabel('Frequency', fontsize=11, fontweight='bold')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        for i, v in enumerate(beh_counts.values):
+            ax.text(v + 0.5, i, str(v), va='center', fontweight='bold')
+        plt.tight_layout()
+        img_buffer = BytesIO()
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+        img_buffer.seek(0)
+        doc.add_picture(img_buffer, width=Inches(6))
+        plt.close()
+        doc.add_paragraph(f"Primary: {beh_counts.index[0]} ({beh_counts.values[0]} incidents).")
         doc.add_paragraph()
         
-        # GRAPH 3: Top Triggers
+        # GRAPH 3: Triggers
         doc.add_heading('3. Most Common Triggers', 2)
         ant_counts = full_df["antecedent"].value_counts().head(5)
-        fig3 = go.Figure()
-        fig3.add_trace(go.Bar(
-            y=ant_counts.index, x=ant_counts.values,
-            orientation='h', marker=dict(color='#475569'),
-            text=ant_counts.values, textposition='outside',
-            textfont=dict(size=14)
-        ))
-        fig3.update_layout(
-            width=700, height=350, showlegend=False,
-            plot_bgcolor='white', paper_bgcolor='white',
-            margin=dict(l=150, r=60, t=40, b=60),
-            xaxis_title="Frequency", font=dict(size=12)
-        )
-        img3 = "/tmp/graph3_triggers.png"
-        fig3.write_image(img3, width=700, height=350, scale=2)
-        doc.add_picture(img3, width=Inches(6))
-        doc.add_paragraph(f"Key trigger: {ant_counts.index[0]}. Proactive strategies should address this antecedent.")
+        fig, ax = plt.subplots(figsize=(8, 4), dpi=150)
+        ax.barh(ant_counts.index, ant_counts.values, color='#475569')
+        ax.set_xlabel('Frequency', fontsize=11, fontweight='bold')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        for i, v in enumerate(ant_counts.values):
+            ax.text(v + 0.5, i, str(v), va='center', fontweight='bold')
+        plt.tight_layout()
+        img_buffer = BytesIO()
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+        img_buffer.seek(0)
+        doc.add_picture(img_buffer, width=Inches(6))
+        plt.close()
+        doc.add_paragraph(f"Key trigger: {ant_counts.index[0]}.")
         doc.add_paragraph()
         
-        # GRAPH 4: Severity Trend
+        # GRAPH 4: Severity
         doc.add_heading('4. Severity Over Time', 2)
-        fig4 = go.Figure()
-        fig4.add_trace(go.Scatter(
-            x=full_df["date_parsed"], y=full_df["severity"],
-            mode='markers', marker=dict(size=10, color='#334155', opacity=0.6)
-        ))
+        fig, ax = plt.subplots(figsize=(8, 4), dpi=150)
+        ax.scatter(full_df["date_parsed"], full_df["severity"], alpha=0.6, s=50, color='#334155')
         if len(full_df) >= 2:
             z = np.polyfit(range(len(full_df)), full_df["severity"], 1)
             p = np.poly1d(z)
-            fig4.add_trace(go.Scatter(
-                x=full_df["date_parsed"], y=p(range(len(full_df))),
-                mode='lines', line=dict(color='#94a3b8', width=3, dash='dash'),
-                name='Trend'
-            ))
-        fig4.update_layout(
-            width=700, height=350, yaxis=dict(range=[0, 6]),
-            plot_bgcolor='white', paper_bgcolor='white',
-            margin=dict(l=60, r=60, t=40, b=60),
-            xaxis_title="Date", yaxis_title="Severity (1-5)",
-            font=dict(size=12), showlegend=False
-        )
-        img4 = "/tmp/graph4_severity.png"
-        fig4.write_image(img4, width=700, height=350, scale=2)
-        doc.add_picture(img4, width=Inches(6))
-        doc.add_paragraph("Severity trend analysis indicates pattern trajectory. Increasing trend requires immediate intervention adjustment.")
+            ax.plot(full_df["date_parsed"], p(range(len(full_df))), linestyle='--', linewidth=2, color='#94a3b8')
+        ax.set_xlabel('Date', fontsize=11, fontweight='bold')
+        ax.set_ylabel('Severity', fontsize=11, fontweight='bold')
+        ax.set_ylim(0, 6)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+        img_buffer = BytesIO()
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+        img_buffer.seek(0)
+        doc.add_picture(img_buffer, width=Inches(6))
+        plt.close()
+        doc.add_paragraph("Severity trend over time.")
         doc.add_paragraph()
         
-        # GRAPH 5: Location Hotspots
+        # GRAPH 5: Locations
         doc.add_heading('5. Location Hotspots', 2)
         loc_counts = full_df["location"].value_counts().head(5)
-        fig5 = go.Figure()
-        fig5.add_trace(go.Bar(
-            y=loc_counts.index, x=loc_counts.values,
-            orientation='h', marker=dict(color='#64748b'),
-            text=loc_counts.values, textposition='outside',
-            textfont=dict(size=14)
-        ))
-        fig5.update_layout(
-            width=700, height=350, showlegend=False,
-            plot_bgcolor='white', paper_bgcolor='white',
-            margin=dict(l=150, r=60, t=40, b=60),
-            xaxis_title="Frequency", font=dict(size=12)
-        )
-        img5 = "/tmp/graph5_locations.png"
-        fig5.write_image(img5, width=700, height=350, scale=2)
-        doc.add_picture(img5, width=Inches(6))
-        doc.add_paragraph(f"Most incidents occur in: {loc_counts.index[0]}. Environmental modifications and increased support recommended.")
+        fig, ax = plt.subplots(figsize=(8, 4), dpi=150)
+        ax.barh(loc_counts.index, loc_counts.values, color='#64748b')
+        ax.set_xlabel('Frequency', fontsize=11, fontweight='bold')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        for i, v in enumerate(loc_counts.values):
+            ax.text(v + 0.5, i, str(v), va='center', fontweight='bold')
+        plt.tight_layout()
+        img_buffer = BytesIO()
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+        img_buffer.seek(0)
+        doc.add_picture(img_buffer, width=Inches(6))
+        plt.close()
+        doc.add_paragraph(f"Most incidents in: {loc_counts.index[0]}.")
         doc.add_paragraph()
         
-        # GRAPH 6: Time of Day
+        # GRAPH 6: Time
         doc.add_heading('6. Time of Day Patterns', 2)
         session_counts = full_df["session"].value_counts()
-        fig6 = go.Figure()
-        fig6.add_trace(go.Bar(
-            x=session_counts.index, y=session_counts.values,
-            marker=dict(color='#475569'),
-            text=session_counts.values, textposition='outside',
-            textfont=dict(size=14)
-        ))
-        fig6.update_layout(
-            width=700, height=350, showlegend=False,
-            plot_bgcolor='white', paper_bgcolor='white',
-            margin=dict(l=60, r=60, t=40, b=60),
-            yaxis_title="Frequency", font=dict(size=12)
-        )
-        img6 = "/tmp/graph6_time.png"
-        fig6.write_image(img6, width=700, height=350, scale=2)
-        doc.add_picture(img6, width=Inches(6))
-        doc.add_paragraph(f"Peak incident time: {session_counts.index[0]}. Schedule proactive regulation supports before this period.")
+        fig, ax = plt.subplots(figsize=(8, 4), dpi=150)
+        ax.bar(session_counts.index, session_counts.values, color='#475569')
+        ax.set_ylabel('Frequency', fontsize=11, fontweight='bold')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        for i, v in enumerate(session_counts.values):
+            ax.text(i, v + 0.5, str(v), ha='center', fontweight='bold')
+        plt.tight_layout()
+        img_buffer = BytesIO()
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+        img_buffer.seek(0)
+        doc.add_picture(img_buffer, width=Inches(6))
+        plt.close()
+        doc.add_paragraph(f"Peak time: {session_counts.index[0]}.")
         
         doc.add_page_break()
         
-        # CLINICAL INTERPRETATION
+        # INTERPRETATION & RECOMMENDATIONS (same as before)
         doc.add_heading('Clinical Interpretation', 1)
-        doc.add_paragraph('Based on Applied Behaviour Analysis (ABA), Trauma-Informed Practice, Berry Street Education Model, and CPI principles:')
+        doc.add_paragraph('Based on Applied Behaviour Analysis, Trauma-Informed Practice, Berry Street Education Model, and CPI principles.')
         
         interp = doc.add_paragraph()
         interp.add_run('Pattern Analysis: ').bold = True
-        interp.add_run(f"Data indicates {student['name']} is most vulnerable when '{top_ant}' occurs in {top_loc} during {top_session}. ")
-        interp.add_run("This behaviour pattern serves as a safety strategy and communication method.\n\n")
-        
-        interp.add_run('Trauma-Informed & Berry Street Lens: ').bold = True
-        interp.add_run("Behaviours represent adaptive responses to perceived threat. The student's nervous system is responding to environmental cues. ")
-        interp.add_run("Berry Street Education Model emphasizes strengthening Body (self-regulation and wellbeing), Relationship (positive connections), ")
-        interp.add_run("Stamina (persistence and engagement), Engagement (learning readiness), and Character (values and agency). ")
-        interp.add_run("Focus on Body and Relationship domains first to build foundation for learning.\n\n")
-        
+        interp.add_run(f"{student['name']} is most vulnerable when '{top_ant}' occurs in {top_loc} during {top_session}. ")
+        interp.add_run("This behaviour is communication and safety strategy.\n\n")
+        interp.add_run('Berry Street Lens: ').bold = True
+        interp.add_run("Focus on Body (regulation) and Relationship (connection) domains first. ")
+        interp.add_run("Build foundation before expecting Engagement or Character development.\n\n")
         interp.add_run('CPI Alignment: ').bold = True
-        interp.add_run("Crisis Prevention Institute principles emphasize Supportive Stance, understanding behaviour as communication, ")
-        interp.add_run("and maintaining dignity throughout the intervention process. Use non-restrictive approaches.")
+        interp.add_run("Supportive Stance, behaviour as communication, maintain dignity.")
         
         doc.add_paragraph()
         
-        # EVIDENCE-BASED RECOMMENDATIONS
         doc.add_heading('Evidence-Based Recommendations', 1)
-        
-        doc.add_heading('1. Proactive Strategies (Prevention) - Berry Street Body Domain', 2)
-        doc.add_paragraph(f"• Regulated start to {top_session}: breathing, movement, sensory breaks", style='List Bullet')
-        doc.add_paragraph(f"• Visual check-in before '{top_ant}' occurs", style='List Bullet')
+        doc.add_heading('1. Body Domain (Regulation)', 2)
+        doc.add_paragraph(f"• Regulated start before {top_session}", style='List Bullet')
+        doc.add_paragraph(f"• Visual check-in before '{top_ant}'", style='List Bullet')
         doc.add_paragraph(f"• Environmental modification in {top_loc}", style='List Bullet')
-        doc.add_paragraph("• Predictable routines with visual supports", style='List Bullet')
-        doc.add_paragraph("• Sensory regulation opportunities (zones of regulation)", style='List Bullet')
+        doc.add_paragraph("• Sensory regulation opportunities", style='List Bullet')
         
-        doc.add_heading('2. Co-Regulation Strategies (CPI-Aligned) - Berry Street Relationship Domain', 2)
-        doc.add_paragraph("• Maintain Supportive Stance: low, slow voice; non-threatening posture", style='List Bullet')
-        doc.add_paragraph("• Reduce audience and environmental stimulation", style='List Bullet')
-        doc.add_paragraph("• One key adult maintains connection (relationship is foundation)", style='List Bullet')
-        doc.add_paragraph("• Acknowledge feelings: 'I can see you're feeling...'", style='List Bullet')
-        doc.add_paragraph("• Offer choices to restore sense of control and agency", style='List Bullet')
+        doc.add_heading('2. Relationship Domain (Connection)', 2)
+        doc.add_paragraph("• Supportive Stance with low, slow voice", style='List Bullet')
+        doc.add_paragraph("• One key adult maintains connection", style='List Bullet')
+        doc.add_paragraph("• Acknowledge feelings", style='List Bullet')
+        doc.add_paragraph("• Offer choices for control", style='List Bullet')
         
-        doc.add_heading('3. Teaching Replacement Skills - Berry Street Stamina & Character Domains', 2)
-        doc.add_paragraph("• Link to Personal & Social Capability curriculum", style='List Bullet')
-        doc.add_paragraph("• Teach help-seeking routines with visual cues", style='List Bullet')
-        doc.add_paragraph("• Practice requesting breaks before escalation (self-advocacy)", style='List Bullet')
-        doc.add_paragraph("• Emotional literacy: naming and understanding feelings", style='List Bullet')
-        doc.add_paragraph("• Build persistence and coping strategies (Stamina domain)", style='List Bullet')
+        doc.add_heading('3. Stamina Domain (Persistence)', 2)
+        doc.add_paragraph("• Teach help-seeking with visual cues", style='List Bullet')
+        doc.add_paragraph("• Practice requesting breaks", style='List Bullet')
+        doc.add_paragraph("• Emotional literacy skills", style='List Bullet')
+        doc.add_paragraph("• Build coping strategies", style='List Bullet')
         
         doc.add_heading('4. SMART Goal', 2)
         goal = doc.add_paragraph()
-        goal.add_run('Measurable Outcome: ').bold = True
-        goal.add_run("Over the next 5 weeks, student will use taught help-seeking strategy ")
-        goal.add_run("(break card/verbal request) in 4 out of 5 opportunities when experiencing ")
-        goal.add_run("escalation triggers, with staff prompting as needed. This supports Berry Street Relationship and Stamina domains.")
-        
+        goal.add_run('Measurable: ').bold = True
+        goal.add_run("Over 5 weeks, use help-seeking strategy in 4/5 opportunities with support.")
         doc.add_paragraph()
         doc.add_paragraph('Review Date: ' + (datetime.now() + timedelta(weeks=5)).strftime('%d %B %Y'))
         
@@ -509,14 +484,14 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
         # FOOTER
         footer = doc.add_paragraph()
         footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        footer_run = footer.add_run('\n\nPrepared by Learning and Behaviour Unit\n')
+        footer_run = footer.add_run('\n\nLearning and Behaviour Unit\n')
         footer_run.font.size = Pt(10)
         footer_run.font.bold = True
         footer_run.font.color.rgb = RGBColor(14, 165, 233)
         
         footer2 = doc.add_paragraph()
         footer2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        footer2_run = footer2.add_run('Evidence-based analysis using ABA, Trauma-Informed, Berry Street, and CPI principles\n')
+        footer2_run = footer2.add_run('Evidence-based: ABA, Trauma-Informed, Berry Street, CPI\n')
         footer2_run.font.size = Pt(9)
         footer2_run.font.color.rgb = RGBColor(100, 116, 139)
         
@@ -526,15 +501,14 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
         footer3_run.font.size = Pt(9)
         footer3_run.font.color.rgb = RGBColor(100, 116, 139)
         
-        # Save to bytes
         file_stream = BytesIO()
         doc.save(file_stream)
         file_stream.seek(0)
         return file_stream
         
     except Exception as e:
-        st.error(f"Error generating BAP: {e}")
         import traceback
+        st.error(f"BAP Error: {e}")
         st.error(traceback.format_exc())
         return None
 
