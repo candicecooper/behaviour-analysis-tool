@@ -78,15 +78,24 @@ MOCK_STAFF = [
 ]
 
 MOCK_STUDENTS = [
-    {"id": "stu_jp1", "name": "Emma T.", "grade": "R", "dob": "2018-05-30", "program": "JP"},
-    {"id": "stu_jp2", "name": "Oliver S.", "grade": "Y1", "dob": "2017-09-12", "program": "JP"},
-    {"id": "stu_jp3", "name": "Sophie M.", "grade": "Y2", "dob": "2016-03-20", "program": "JP"},
-    {"id": "stu_py1", "name": "Liam C.", "grade": "Y3", "dob": "2015-06-15", "program": "PY"},
-    {"id": "stu_py2", "name": "Ava R.", "grade": "Y4", "dob": "2014-11-08", "program": "PY"},
-    {"id": "stu_py3", "name": "Noah B.", "grade": "Y6", "dob": "2012-02-28", "program": "PY"},
-    {"id": "stu_sy1", "name": "Isabella G.", "grade": "Y7", "dob": "2011-04-17", "program": "SY"},
-    {"id": "stu_sy2", "name": "Ethan D.", "grade": "Y9", "dob": "2009-12-03", "program": "SY"},
-    {"id": "stu_sy3", "name": "Mia A.", "grade": "Y11", "dob": "2007-08-20", "program": "SY"},
+    {"id": "stu_jp1", "name": "Emma T.", "grade": "R", "dob": "2018-05-30", "program": "JP", 
+     "edid": "ED123456", "placement_start": "2024-02-01", "placement_end": None},
+    {"id": "stu_jp2", "name": "Oliver S.", "grade": "Y1", "dob": "2017-09-12", "program": "JP",
+     "edid": "ED234567", "placement_start": "2024-03-15", "placement_end": None},
+    {"id": "stu_jp3", "name": "Sophie M.", "grade": "Y2", "dob": "2016-03-20", "program": "JP",
+     "edid": "ED345678", "placement_start": "2024-01-29", "placement_end": None},
+    {"id": "stu_py1", "name": "Liam C.", "grade": "Y3", "dob": "2015-06-15", "program": "PY",
+     "edid": "ED456789", "placement_start": "2024-02-12", "placement_end": None},
+    {"id": "stu_py2", "name": "Ava R.", "grade": "Y4", "dob": "2014-11-08", "program": "PY",
+     "edid": "ED567890", "placement_start": "2024-01-08", "placement_end": None},
+    {"id": "stu_py3", "name": "Noah B.", "grade": "Y6", "dob": "2012-02-28", "program": "PY",
+     "edid": "ED678901", "placement_start": "2024-04-03", "placement_end": None},
+    {"id": "stu_sy1", "name": "Isabella G.", "grade": "Y7", "dob": "2011-04-17", "program": "SY",
+     "edid": "ED789012", "placement_start": "2024-01-29", "placement_end": None},
+    {"id": "stu_sy2", "name": "Ethan D.", "grade": "Y9", "dob": "2009-12-03", "program": "SY",
+     "edid": "ED890123", "placement_start": "2024-02-26", "placement_end": None},
+    {"id": "stu_sy3", "name": "Mia A.", "grade": "Y11", "dob": "2007-08-20", "program": "SY",
+     "edid": "ED901234", "placement_start": "2024-03-11", "placement_end": None},
 ]
 
 PROGRAM_NAMES = {"JP": "Junior Primary", "PY": "Primary Years", "SY": "Senior Years"}
@@ -1875,7 +1884,7 @@ def render_admin_portal():
     st.markdown("---")
     
     # TABS
-    tab1, tab2, tab3 = st.tabs(["👥 Manage Students", "📊 System Overview", "⚙️ Settings"])
+    tab1, tab2, tab3 = st.tabs(["👥 Manage Students", "📊 System Overview", "👨‍💼 Staff Management"])
     
     with tab1:
         st.markdown("### Student Management")
@@ -1883,38 +1892,43 @@ def render_admin_portal():
         # ADD NEW STUDENT
         with st.expander("➕ Add New Student", expanded=False):
             with st.form("add_student_form"):
-                col1, col2, col3 = st.columns(3)
+                col1, col2, col3, col4 = st.columns(4)
                 
                 with col1:
                     new_name = st.text_input("Student Name *", placeholder="First L.")
                     new_grade = st.selectbox("Grade *", ["R", "Y1", "Y2", "Y3", "Y4", "Y5", "Y6", "Y7", "Y8", "Y9", "Y10", "Y11", "Y12"])
                 
                 with col2:
+                    new_edid = st.text_input("EDID *", placeholder="ED123456")
                     new_dob = st.date_input("Date of Birth *", value=date(2015, 1, 1))
-                    new_program = st.selectbox("Program *", ["JP", "PY", "SY"])
                 
                 with col3:
+                    new_program = st.selectbox("Program *", ["JP", "PY", "SY"])
                     new_placement_start = st.date_input("Placement Start Date *", value=date.today())
+                
+                with col4:
+                    st.write("")  # Spacer
                     new_placement_end = st.date_input("Placement End Date (Optional)", value=None)
                 
                 submitted = st.form_submit_button("Add Student", type="primary")
                 
                 if submitted:
-                    if new_name and new_grade and new_program:
+                    if new_name and new_grade and new_program and new_edid:
                         new_student = {
                             "id": f"stu_{uuid.uuid4().hex[:8]}",
                             "name": new_name,
                             "grade": new_grade,
                             "dob": new_dob.isoformat(),
+                            "edid": new_edid,
                             "program": new_program,
                             "placement_start": new_placement_start.isoformat(),
                             "placement_end": new_placement_end.isoformat() if new_placement_end else None
                         }
                         st.session_state.students.append(new_student)
-                        st.success(f"✅ Added {new_name} to {PROGRAM_NAMES[new_program]}")
+                        st.success(f"✅ Added {new_name} (EDID: {new_edid}) to {PROGRAM_NAMES[new_program]}")
                         st.rerun()
                     else:
-                        st.error("Please complete all required fields")
+                        st.error("Please complete all required fields (Name, Grade, EDID, Program)")
         
         st.markdown("---")
         
@@ -1937,16 +1951,22 @@ def render_admin_portal():
                     with col1:
                         st.markdown(f"**{student['name']}**")
                         st.caption(f"Grade {student['grade']}")
+                        if student.get('edid'):
+                            st.caption(f"🆔 EDID: {student['edid']}")
                     
                     with col2:
-                        start_date = datetime.fromisoformat(student['placement_start']).strftime('%d/%m/%Y')
-                        st.caption(f"📅 Start: {start_date}")
-                        
-                        # Calculate days enrolled
-                        start = datetime.fromisoformat(student['placement_start']).date()
-                        end = datetime.fromisoformat(student['placement_end']).date() if student.get('placement_end') else date.today()
-                        days = (end - start).days
-                        st.caption(f"📊 {days} days enrolled")
+                        if student.get('placement_start'):
+                            start_date = datetime.fromisoformat(student['placement_start']).strftime('%d/%m/%Y')
+                            st.caption(f"📅 Start: {start_date}")
+                            
+                            # Calculate days enrolled
+                            start = datetime.fromisoformat(student['placement_start']).date()
+                            end = datetime.fromisoformat(student['placement_end']).date() if student.get('placement_end') else date.today()
+                            days = (end - start).days
+                            st.caption(f"📊 {days} days enrolled")
+                        else:
+                            st.caption("📅 Start: Not set")
+                            st.caption("📊 Days: N/A")
                     
                     with col3:
                         if student.get('placement_end'):
@@ -1969,8 +1989,10 @@ def render_admin_portal():
                             edit_col1, edit_col2 = st.columns(2)
                             
                             with edit_col1:
+                                # Use existing date or default to today
+                                default_start = datetime.fromisoformat(student['placement_start']).date() if student.get('placement_start') else date.today()
                                 edit_start = st.date_input("Placement Start", 
-                                                          value=datetime.fromisoformat(student['placement_start']).date(),
+                                                          value=default_start,
                                                           key=f"edit_start_{student['id']}")
                             
                             with edit_col2:
@@ -2024,8 +2046,169 @@ def render_admin_portal():
             st.write(f"**{PROGRAM_NAMES[prog]}:** {count} total ({active} active)")
     
     with tab3:
-        st.markdown("### System Settings")
-        st.info("⚙️ Additional configuration options coming soon")
+        st.markdown("### Staff Management")
+        
+        # ADD NEW STAFF
+        with st.expander("➕ Add New Staff Member", expanded=False):
+            with st.form("add_staff_form"):
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    staff_name = st.text_input("Full Name *", placeholder="Jane Smith")
+                    staff_email = st.text_input("Email Address *", placeholder="jane.smith@school.edu.au", 
+                                               help="Will be used as username and for critical incident notifications")
+                    staff_password = st.text_input("Initial Password *", type="password", value="demo123")
+                
+                with col2:
+                    staff_role = st.selectbox("Role *", 
+                                             ["TSS", "Teacher", "Leader", "ADM"],
+                                             help="TSS=Teacher/Support Staff, Leader=Program Leader, ADM=Administrator")
+                    staff_program = st.selectbox("Program *", ["JP", "PY", "SY", "All Programs"])
+                    staff_phone = st.text_input("Phone Number", placeholder="0412 345 678")
+                
+                staff_notes = st.text_area("Notes (Optional)", placeholder="Additional information about this staff member")
+                
+                submit_staff = st.form_submit_button("Add Staff Member", type="primary")
+                
+                if submit_staff:
+                    if staff_name and staff_email and staff_password and staff_role:
+                        # Check if email already exists
+                        if any(s.get("email", "").lower() == staff_email.lower() for s in st.session_state.staff):
+                            st.error(f"❌ Email {staff_email} already exists")
+                        else:
+                            new_staff = {
+                                "id": f"staff_{uuid.uuid4().hex[:8]}",
+                                "name": staff_name,
+                                "email": staff_email.lower().strip(),
+                                "password": staff_password,
+                                "role": staff_role,
+                                "program": staff_program if staff_program != "All Programs" else None,
+                                "phone": staff_phone if staff_phone else None,
+                                "notes": staff_notes if staff_notes else None,
+                                "receive_critical_emails": True,  # Default to receiving emails
+                                "created_date": date.today().isoformat()
+                            }
+                            st.session_state.staff.append(new_staff)
+                            st.success(f"✅ Added {staff_name} ({staff_email})")
+                            st.rerun()
+                    else:
+                        st.error("Please complete all required fields (Name, Email, Password, Role)")
+        
+        st.markdown("---")
+        
+        # EXISTING STAFF
+        st.markdown("### Current Staff")
+        
+        # Group by role
+        for role in ["ADM", "Leader", "Teacher", "TSS"]:
+            role_names = {"ADM": "Administrators", "Leader": "Program Leaders", "Teacher": "Teachers", "TSS": "Support Staff"}
+            role_staff = [s for s in st.session_state.staff if s.get("role") == role]
+            
+            if role_staff:
+                st.markdown(f"#### {role_names[role]}")
+                
+                for staff in role_staff:
+                    with st.container(border=True):
+                        col1, col2, col3, col4 = st.columns([3, 2, 2, 1])
+                        
+                        with col1:
+                            st.markdown(f"**{staff['name']}**")
+                            st.caption(f"📧 {staff['email']}")
+                            if staff.get('phone'):
+                                st.caption(f"📱 {staff['phone']}")
+                        
+                        with col2:
+                            st.caption(f"**Role:** {staff['role']}")
+                            if staff.get('program'):
+                                st.caption(f"**Program:** {PROGRAM_NAMES[staff['program']]}")
+                            else:
+                                st.caption("**Program:** All Programs")
+                        
+                        with col3:
+                            receives_emails = staff.get('receive_critical_emails', True)
+                            if receives_emails:
+                                st.caption("📬 Receives critical alerts")
+                            else:
+                                st.caption("📪 No critical alerts")
+                            
+                            if staff.get('created_date'):
+                                st.caption(f"Added: {staff['created_date']}")
+                        
+                        with col4:
+                            if st.button("✏️", key=f"edit_staff_{staff['id']}", help="Edit staff"):
+                                st.session_state.editing_staff = staff['id']
+                                st.rerun()
+                        
+                        # EDIT STAFF
+                        if st.session_state.get("editing_staff") == staff['id']:
+                            with st.expander("✏️ Edit Staff Details", expanded=True):
+                                with st.form(f"edit_staff_form_{staff['id']}"):
+                                    edit_col1, edit_col2 = st.columns(2)
+                                    
+                                    with edit_col1:
+                                        edit_name = st.text_input("Name", value=staff['name'], key=f"edit_staff_name_{staff['id']}")
+                                        edit_email = st.text_input("Email", value=staff['email'], key=f"edit_staff_email_{staff['id']}")
+                                        edit_phone = st.text_input("Phone", value=staff.get('phone', ''), key=f"edit_staff_phone_{staff['id']}")
+                                    
+                                    with edit_col2:
+                                        edit_role = st.selectbox("Role", ["TSS", "Teacher", "Leader", "ADM"],
+                                                                index=["TSS", "Teacher", "Leader", "ADM"].index(staff['role']),
+                                                                key=f"edit_staff_role_{staff['id']}")
+                                        edit_program = st.selectbox("Program", ["JP", "PY", "SY", "All Programs"],
+                                                                   index=["JP", "PY", "SY", "All Programs"].index(
+                                                                       PROGRAM_NAMES.get(staff.get('program'), "All Programs") 
+                                                                       if staff.get('program') else "All Programs"
+                                                                   ) if staff.get('program') else 3,
+                                                                   key=f"edit_staff_program_{staff['id']}")
+                                        edit_receive_emails = st.checkbox("Receive critical incident emails",
+                                                                         value=staff.get('receive_critical_emails', True),
+                                                                         key=f"edit_staff_emails_{staff['id']}")
+                                    
+                                    edit_notes = st.text_area("Notes", value=staff.get('notes', ''), key=f"edit_staff_notes_{staff['id']}")
+                                    
+                                    col_save, col_cancel, col_delete = st.columns([1, 1, 1])
+                                    with col_save:
+                                        if st.form_submit_button("💾 Save Changes", type="primary"):
+                                            staff['name'] = edit_name
+                                            staff['email'] = edit_email.lower().strip()
+                                            staff['phone'] = edit_phone if edit_phone else None
+                                            staff['role'] = edit_role
+                                            staff['program'] = edit_program if edit_program != "All Programs" else None
+                                            staff['receive_critical_emails'] = edit_receive_emails
+                                            staff['notes'] = edit_notes if edit_notes else None
+                                            st.session_state.editing_staff = None
+                                            st.success("✅ Updated")
+                                            st.rerun()
+                                    
+                                    with col_cancel:
+                                        if st.form_submit_button("❌ Cancel"):
+                                            st.session_state.editing_staff = None
+                                            st.rerun()
+                                    
+                                    with col_delete:
+                                        if st.form_submit_button("🗑️ Delete", help="Remove this staff member"):
+                                            if staff['role'] != 'ADM' or len([s for s in st.session_state.staff if s.get('role') == 'ADM']) > 1:
+                                                st.session_state.staff.remove(staff)
+                                                st.session_state.editing_staff = None
+                                                st.success("✅ Staff member removed")
+                                                st.rerun()
+                                            else:
+                                                st.error("❌ Cannot delete the last administrator")
+        
+        st.markdown("---")
+        
+        # EMAIL NOTIFICATION SETTINGS
+        st.markdown("### 📧 Email Notification Recipients")
+        st.caption("Staff members who will receive critical incident notifications:")
+        
+        email_recipients = [s for s in st.session_state.staff if s.get('receive_critical_emails', True)]
+        
+        if email_recipients:
+            for recipient in email_recipients:
+                st.write(f"• **{recipient['name']}** ({recipient['email']}) - {recipient['role']}")
+        else:
+            st.warning("⚠️ No staff members set to receive critical incident emails!")
+
 
 
 
