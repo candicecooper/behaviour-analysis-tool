@@ -320,6 +320,61 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
             run.font.color.rgb = RGBColor(100, 116, 139)
         
         doc.add_paragraph()
+        
+        # Add analysis image
+        try:
+            # Create image inline
+            import matplotlib
+            matplotlib.use('Agg')
+            import matplotlib.pyplot as plt
+            import matplotlib.patches as mpatches
+            from matplotlib.patches import FancyBboxPatch, Circle
+            import numpy as np
+            
+            fig, ax = plt.subplots(figsize=(6, 3), dpi=150)
+            ax.set_xlim(0, 10)
+            ax.set_ylim(0, 5)
+            ax.axis('off')
+            
+            # Background
+            ax.add_patch(FancyBboxPatch((0, 0), 10, 5, boxstyle="round,pad=0.1", 
+                                        facecolor='#f8fafc', edgecolor='#e2e8f0', linewidth=2))
+            
+            # Bar chart
+            bars_x = [1.5, 2.5, 3.5, 4.5, 5.5]
+            bars_y = [2.5, 3.2, 2.8, 3.5, 3.0]
+            for x, y in zip(bars_x, bars_y):
+                ax.add_patch(plt.Rectangle((x-0.3, 0.5), 0.6, y-0.5, 
+                                          facecolor='#3b82f6', alpha=0.7))
+            
+            # Trend line
+            line_x = np.linspace(6.5, 9.5, 50)
+            line_y = 1.5 + (line_x - 6.5) * 0.2
+            ax.plot(line_x, line_y, color='#22c55e', linewidth=3, alpha=0.8)
+            ax.scatter([6.5, 7.5, 8.5, 9.5], [1.5, 1.7, 2.1, 2.3], 
+                      s=60, color='#22c55e', zorder=5, alpha=0.8)
+            
+            # Icons
+            circle = Circle((1, 1.5), 0.4, facecolor='none', edgecolor='#0ea5e9', linewidth=3)
+            ax.add_patch(circle)
+            ax.plot([1.3, 1.6], [1.2, 0.9], color='#0ea5e9', linewidth=3)
+            
+            plt.tight_layout()
+            
+            img_stream = BytesIO()
+            plt.savefig(img_stream, format='png', dpi=150, bbox_inches='tight', 
+                       facecolor='white', edgecolor='none')
+            img_stream.seek(0)
+            plt.close()
+            
+            # Add to document
+            doc.add_picture(img_stream, width=Inches(5))
+            last_paragraph = doc.paragraphs[-1]
+            last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        except:
+            pass  # If image creation fails, continue without it
+        
+        doc.add_paragraph()
         branding = doc.add_paragraph('Prepared by: Learning and Behaviour Unit')
         branding.alignment = WD_ALIGN_PARAGRAPH.CENTER
         for run in branding.runs:
@@ -658,6 +713,77 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
         set_arial(ri1)
         ri2 = integration.add_run("This plan integrates DFE Protective Practices with Berry Street Education Model domains (Body, Relationship, Stamina, Engagement, Character), CPI crisis prevention principles, and trauma-informed approaches. All strategies prioritize relationship, safety, and skill-building before behavioural expectations. The protective practices framework underpins every recommendation in this plan.")
         set_arial(ri2)
+        
+        
+        
+        # WINDOW OF TOLERANCE FRAMEWORK
+        wot_heading = doc.add_heading('Window of Tolerance Framework', 1)
+        for run in wot_heading.runs:
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
+        
+        wot_intro = doc.add_paragraph("The Window of Tolerance (Siegel, 1999; Ogden & Fisher, 2015) describes the optimal zone of arousal where students can process information, regulate emotions, and engage in learning. Understanding this framework is essential for trauma-informed behaviour support.")
+        for run in wot_intro.runs:
+            set_arial(run)
+        
+        doc.add_paragraph()
+        
+        # Three zones explanation
+        zones_heading = doc.add_heading('Three Zones of Arousal', 2)
+        for run in zones_heading.runs:
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
+        
+        # Zone 1: Within Window
+        zone1 = doc.add_paragraph()
+        z1a = zone1.add_run('Within Window of Tolerance (Optimal Zone): ')
+        z1a.bold = True
+        set_arial(z1a)
+        z1b = zone1.add_run(f"When {student['name']} is in their window, they can think clearly, regulate emotions, problem-solve, and access learning. Signs include: calm body, focused attention, able to follow instructions, receptive to support, can use coping strategies effectively.\n\n")
+        set_arial(z1b)
+        
+        # Zone 2: Hyper-arousal
+        zone2 = doc.add_paragraph()
+        z2a = zone2.add_run('Above Window (Hyper-arousal/Fight-Flight): ')
+        z2a.bold = True
+        set_arial(z2a)
+        z2b = zone2.add_run("When arousal is too high, the nervous system enters survival mode. The student may display: increased aggression, verbal outbursts, elopement, property destruction, inability to process verbal information, resistance to demands. The brain's 'thinking centre' goes offline - logic and reasoning are not accessible.\n\n")
+        set_arial(z2b)
+        
+        # Zone 3: Hypo-arousal
+        zone3 = doc.add_paragraph()
+        z3a = zone3.add_run('Below Window (Hypo-arousal/Freeze-Shutdown): ')
+        z3a.bold = True
+        set_arial(z3a)
+        z3b = zone3.add_run("When arousal drops too low, the student may appear: withdrawn, non-responsive, dissociated, physically immobile, unable to engage, 'shut down.' This is also a survival response and requires gentle support to re-regulate.\n\n")
+        set_arial(z3b)
+        
+        doc.add_paragraph()
+        
+        # Application to this student
+        application_heading = doc.add_heading('Application to Current Patterns', 2)
+        for run in application_heading.runs:
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
+        
+        application = doc.add_paragraph()
+        app1 = application.add_run('Pattern Analysis: ')
+        app1.bold = True
+        set_arial(app1)
+        app2 = application.add_run(f"Data shows {student['name']} is most vulnerable during {top_session} when '{top_ant}' occurs. These triggers appear to push the student outside their window of tolerance. Incidents in {top_loc} suggest this environment may contain additional stressors that narrow the window further.\n\n")
+        set_arial(app2)
+        
+        app3 = application.add_run('Intervention Focus: ')
+        app3.bold = True
+        set_arial(app3)
+        app4 = application.add_run("Strategies must focus on: (1) Widening the window through consistent regulation practice, (2) Recognizing early warning signs of dysregulation, (3) Co-regulating to bring student back into window before escalation, (4) Teaching student to recognize their own arousal states and use tools independently.\n\n")
+        set_arial(app4)
+        
+        app5 = application.add_run('Research Base: ')
+        app5.bold = True
+        set_arial(app5)
+        app6 = application.add_run("Polyvagal Theory (Porges, 2011) explains the autonomic nervous system's role in these responses. Trauma and chronic stress narrow the window. Consistent, predictable relationships and regulation supports gradually widen it. This is neurobiological - not behavioural choice.")
+        set_arial(app6)
         
         doc.add_page_break()
         
@@ -1496,6 +1622,116 @@ def render_student_analysis_page():
     st.markdown("---")
 
     
+    # QUICK VS CRITICAL COMPARISON SECTION
+    st.markdown("## 📊 Quick vs Critical Incident Analysis")
+    st.caption("Understanding the relationship between quick logs and critical incidents helps identify escalation patterns")
+    
+    # Separate quick and critical incidents
+    quick_only = [i for i in quick if not i.get("is_critical")]
+    critical_data = crit
+    
+    col_q, col_c = st.columns(2)
+    with col_q:
+        st.metric("Quick Incidents", len(quick_only), help="Standard behaviour logs (Severity 1-2)")
+    with col_c:
+        st.metric("Critical Incidents", len(critical_data), help="Severity 3+ requiring ABCH form")
+    
+    st.markdown("---")
+    
+    # COMPARISON GRAPH 1: Frequency over time
+    st.markdown("### 📈 Incident Type Over Time")
+    
+    if len(quick_only) > 0 or len(critical_data) > 0:
+        fig_comp1 = go.Figure()
+        
+        # Quick incidents line
+        if len(quick_only) > 0:
+            quick_df_temp = pd.DataFrame(quick_only)
+            quick_df_temp["date_parsed"] = pd.to_datetime(quick_df_temp["date"])
+            quick_daily = quick_df_temp.groupby(quick_df_temp["date_parsed"].dt.date).size().reset_index(name="count")
+            fig_comp1.add_trace(go.Scatter(
+                x=quick_daily["date_parsed"], y=quick_daily["count"],
+                mode='lines+markers', name='Quick Incidents',
+                line=dict(color='#3b82f6', width=2),
+                marker=dict(size=6, color='#3b82f6')
+            ))
+        
+        # Critical incidents line
+        if len(critical_data) > 0:
+            crit_dates = []
+            for c in critical_data:
+                date_str = c.get("created_at", c.get("date", datetime.now().isoformat()))
+                try:
+                    crit_dates.append(datetime.fromisoformat(date_str).date())
+                except:
+                    pass
+            
+            if crit_dates:
+                crit_df_temp = pd.DataFrame({"date": crit_dates})
+                crit_daily = crit_df_temp.groupby("date").size().reset_index(name="count")
+                fig_comp1.add_trace(go.Scatter(
+                    x=crit_daily["date"], y=crit_daily["count"],
+                    mode='lines+markers', name='Critical Incidents',
+                    line=dict(color='#ef4444', width=2),
+                    marker=dict(size=6, color='#ef4444')
+                ))
+        
+        fig_comp1.update_layout(
+            height=300, xaxis_title="Date", yaxis_title="Total",
+            plot_bgcolor='white', paper_bgcolor='white',
+            font=dict(color='#334155', size=11),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            yaxis=dict(tickmode='linear', tick0=0, dtick=1)
+        )
+        st.plotly_chart(fig_comp1, use_container_width=True)
+        
+        with st.expander("💡 Clinical Interpretation (Window of Tolerance)"):
+            st.markdown("**Pattern Recognition:** Increasing critical incidents suggest student spending more time outside Window of Tolerance. " +
+                       "**Window of Tolerance:** Critical incidents indicate hyper-arousal (fight/flight) or hypo-arousal (shutdown). " +
+                       "Focus on widening window through consistent co-regulation.")
+    
+    st.markdown("---")
+    
+    # COMPARISON GRAPH 2: Severity distribution
+    st.markdown("### 📊 Severity Distribution")
+    
+    if len(quick_only) > 0:
+        quick_sev = pd.DataFrame(quick_only)["severity"].value_counts().sort_index()
+        crit_sev_counts = [0] * 5
+        for c in critical_data:
+            sev = c.get("severity", 3)
+            if 1 <= sev <= 5:
+                crit_sev_counts[sev-1] += 1
+        
+        fig_sev = go.Figure()
+        fig_sev.add_trace(go.Bar(
+            x=list(range(1, 6)), y=[quick_sev.get(i, 0) for i in range(1, 6)],
+            name='Quick Incidents', marker=dict(color='#3b82f6'),
+            text=[quick_sev.get(i, 0) for i in range(1, 6)], textposition='outside'
+        ))
+        fig_sev.add_trace(go.Bar(
+            x=list(range(1, 6)), y=crit_sev_counts,
+            name='Critical Incidents', marker=dict(color='#ef4444'),
+            text=crit_sev_counts, textposition='outside'
+        ))
+        
+        fig_sev.update_layout(
+            height=300, xaxis_title="Severity Level", yaxis_title="Total",
+            plot_bgcolor='white', paper_bgcolor='white',
+            font=dict(color='#334155', size=11), barmode='group',
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            xaxis=dict(tickmode='linear', tick0=1, dtick=1),
+            yaxis=dict(tickmode='linear', tick0=0, dtick=1)
+        )
+        st.plotly_chart(fig_sev, use_container_width=True)
+        
+        with st.expander("💡 Clinical Interpretation (Arousal States)"):
+            st.markdown("**Severity 1-2:** Student within/near window - accessible to support. " +
+                       "**Severity 3+:** Outside window - in survival mode. " +
+                       "**Goal:** Intervene at 1-2 before leaving window. Co-regulation most effective when thinking brain still accessible.")
+    
+    st.markdown("---")
+    
     # GRAPH 7-10 and rest of analysis...
     st.markdown("### 📆 Day of Week Patterns")
     day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
@@ -1620,26 +1856,6 @@ def render_student_analysis_page():
     with col2:
         if st.button("🏠 Program Landing", key="home_analysis_bottom", use_container_width=True):
             go_to("landing")
-
-def main():
-    init_state()
-    
-    if not st.session_state.logged_in:
-        render_login_page()
-        return
-    
-    page = st.session_state.current_page
-    
-    if page == "landing": render_landing_page()
-    elif page == "program_students": render_program_students_page()
-    elif page == "incident_log": render_incident_log_page()
-    elif page == "critical_incident": render_critical_incident_page()
-    elif page == "student_analysis": render_student_analysis_page()
-    elif page == "admin_portal": render_admin_portal()
-    else: render_landing_page()
-
-if __name__ == "__main__":
-    main()
 
 def render_admin_portal():
     """Admin portal for managing students and placement dates"""
@@ -1810,3 +2026,27 @@ def render_admin_portal():
     with tab3:
         st.markdown("### System Settings")
         st.info("⚙️ Additional configuration options coming soon")
+
+
+
+
+
+def main():
+    init_state()
+    
+    if not st.session_state.logged_in:
+        render_login_page()
+        return
+    
+    page = st.session_state.current_page
+    
+    if page == "landing": render_landing_page()
+    elif page == "program_students": render_program_students_page()
+    elif page == "incident_log": render_incident_log_page()
+    elif page == "critical_incident": render_critical_incident_page()
+    elif page == "student_analysis": render_student_analysis_page()
+    elif page == "admin_portal": render_admin_portal()
+    else: render_landing_page()
+
+if __name__ == "__main__":
+    main()
