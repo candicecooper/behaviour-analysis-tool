@@ -307,13 +307,12 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
         font.name = 'Arial'
         style.element.rPr.rFonts.set(qn('w:eastAsia'), 'Arial')
         
-        
         # TITLE
-        title = heading = doc.add_heading('Behaviour Analysis Plan', 0)
- for run in heading.runs:
-     run.font.color.rgb = GREEN_RGB
-     set_arial(run)
-        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        heading = doc.add_heading('Behaviour Analysis Plan', 0)
+        for run in heading.runs:
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
+        heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
         subtitle = doc.add_paragraph('Evidence-Based Analysis & Recommendations')
         subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
         for run in subtitle.runs:
@@ -584,8 +583,6 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
         
         doc.add_paragraph()
         
-        heading = 
-        
         # DFE PROTECTIVE PRACTICES FRAMEWORK
         dfe_heading = doc.add_heading('DFE Protective Practices Framework', 1)
         for run in dfe_heading.runs:
@@ -664,16 +661,11 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
         
         doc.add_page_break()
         
-doc.add_heading('Evidence-Based Recommendations', 1)
-
-        
+        heading = doc.add_heading('Evidence-Based Recommendations', 1)
         for run in heading.runs:
-
-        
             run.font.color.rgb = GREEN_RGB
-
-        
             set_arial(run)
+        
         heading = doc.add_heading('1. Body Domain (Regulation)', 2)
 
         for run in heading.runs:
@@ -1643,8 +1635,7 @@ def main():
     elif page == "incident_log": render_incident_log_page()
     elif page == "critical_incident": render_critical_incident_page()
     elif page == "student_analysis": render_student_analysis_page()
-elif page == "admin_portal":
-    render_admin_portal()
+    elif page == "admin_portal": render_admin_portal()
     else: render_landing_page()
 
 if __name__ == "__main__":
