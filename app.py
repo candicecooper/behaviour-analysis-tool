@@ -6,6 +6,7 @@ from datetime import datetime, date, time, timedelta
 import uuid
 import random
 from io import BytesIO
+import base64
 
 st.set_page_config(page_title="CLC Behaviour Support", page_icon="📊", layout="wide", initial_sidebar_state="collapsed")
 
@@ -99,7 +100,17 @@ INTERVENTIONS = ["CPI Supportive stance", "Offered break", "Reduced demand", "Pr
 LOCATIONS = ["JP Classroom", "PY Classroom", "SY Classroom", "Playground", "Library", "Admin", "Gate", "Toilets"]
 VALID_PAGES = ["login", "landing", "program_students", "incident_log", "critical_incident", "student_analysis"]
 
-# HYPOTHESIS GENERATOR
+def format_time_12hr(time_str):
+    """Convert 24hr time string to 12hr format"""
+    try:
+        if isinstance(time_str, str):
+            dt = datetime.strptime(time_str, "%H:%M:%S")
+        else:
+            dt = datetime.combine(date.today(), time_str)
+        return dt.strftime("%I:%M %p")
+    except:
+        return time_str
+
 def generate_hypothesis(antecedent, behaviour, consequence):
     """Auto-generate hypothesis based on ABC data"""
     hypotheses = []
@@ -122,14 +133,11 @@ def generate_hypothesis(antecedent, behaviour, consequence):
     
     return " / ".join(hypotheses[:2])
 
-# ADMIN SUMMARY GENERATOR
 def generate_admin_summary(incident_data, student, staff_name):
     """Generate brief summary for external incident log - FOR ADMIN USE ONLY"""
-    
     abch_primary = incident_data.get("ABCH_primary", {})
     intended = incident_data.get("intended_outcomes", [])
     
-    # Extract key info
     date_time = incident_data.get("created_at", datetime.now().isoformat())
     dt = datetime.fromisoformat(date_time)
     
@@ -140,7 +148,6 @@ def generate_admin_summary(incident_data, student, staff_name):
     consequence = abch_primary.get("consequence", "")
     hypothesis = abch_primary.get("hypothesis", "")
     
-    # Generate concise summary
     summary = f"""CRITICAL INCIDENT SUMMARY - FOR ADMIN USE ONLY
     
 Student: {student['name']} (Grade {student['grade']})
@@ -176,7 +183,7 @@ def show_severity_guide():
     <div style='background: white; padding: 1.25rem; border-radius: 8px; margin: 1rem 0; 
                 box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0;'>
         <div style='color: #0f172a; font-weight: 700; margin-bottom: 1rem; font-size: 1rem;'>
-            📊 Severity Level Guide
+            📊 Severity Level Guide (from start to end of incident)
         </div>
         <div style='display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem;'>
             <div style='background: #f8fafc; padding: 1rem; border-radius: 6px; border: 2px solid #cbd5e1;'>
@@ -225,11 +232,12 @@ Admin summary included for departmental log.
 
 
 def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, top_loc, top_session, risk_score, risk_level):
-    """Generate comprehensive BAP with graphs - Learning and Behaviour Unit branded"""
+    """Generate comprehensive BAP with embedded graphs - Berry Street & Learning and Behaviour Unit"""
     try:
         from docx import Document
         from docx.shared import Inches, Pt, RGBColor
         from docx.enum.text import WD_ALIGN_PARAGRAPH
+        import plotly.graph_objects as go
         
         doc = Document()
         
@@ -244,7 +252,6 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
         
         doc.add_paragraph()
         
-        # Branding
         branding = doc.add_paragraph('Prepared by: Learning and Behaviour Unit')
         branding.alignment = WD_ALIGN_PARAGRAPH.CENTER
         for run in branding.runs:
@@ -303,192 +310,196 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
         doc.add_heading('Visual Analytics', 1)
         doc.add_paragraph('The following graphs provide visual representation of incident patterns and trends.')
         
-        try:
-            # GRAPH 1: Daily Frequency
-            doc.add_heading('1. Daily Incident Frequency', 2)
-            daily = full_df.groupby(full_df["date_parsed"].dt.date).size().reset_index(name="count")
-            fig1 = go.Figure()
-            fig1.add_trace(go.Scatter(
-                x=daily["date_parsed"], y=daily["count"],
-                mode='lines+markers', line=dict(color='#334155', width=2),
-                marker=dict(size=6), fill='tozeroy', fillcolor='rgba(51, 65, 85, 0.1)'
-            ))
-            fig1.update_layout(
-                height=300, width=600, showlegend=False,
-                plot_bgcolor='white', paper_bgcolor='white',
-                margin=dict(l=40, r=40, t=40, b=40),
-                xaxis_title="Date", yaxis_title="Incident Count"
-            )
-            img1 = "/tmp/graph1_daily.png"
-            fig1.write_image(img1)
-            doc.add_picture(img1, width=Inches(5.5))
-            doc.add_paragraph("Daily incident frequency shows temporal patterns and potential correlations with external factors.")
-            doc.add_paragraph()
-            
-            # GRAPH 2: Top Behaviours
-            doc.add_heading('2. Most Common Behaviours', 2)
-            beh_counts = full_df["behaviour_type"].value_counts().head(5)
-            fig2 = go.Figure()
-            fig2.add_trace(go.Bar(
-                y=beh_counts.index, x=beh_counts.values,
-                orientation='h', marker=dict(color='#334155'),
-                text=beh_counts.values, textposition='outside'
-            ))
-            fig2.update_layout(
-                height=300, width=600, showlegend=False,
-                plot_bgcolor='white', paper_bgcolor='white',
-                margin=dict(l=40, r=40, t=40, b=40),
-                xaxis_title="Frequency"
-            )
-            img2 = "/tmp/graph2_behaviours.png"
-            fig2.write_image(img2)
-            doc.add_picture(img2, width=Inches(5.5))
-            doc.add_paragraph(f"Primary behaviour: {beh_counts.index[0]} ({beh_counts.values[0]} incidents). Intervention planning should prioritize this behaviour.")
-            doc.add_paragraph()
-            
-            # GRAPH 3: Top Triggers
-            doc.add_heading('3. Most Common Triggers', 2)
-            ant_counts = full_df["antecedent"].value_counts().head(5)
-            fig3 = go.Figure()
-            fig3.add_trace(go.Bar(
-                y=ant_counts.index, x=ant_counts.values,
-                orientation='h', marker=dict(color='#475569'),
-                text=ant_counts.values, textposition='outside'
-            ))
-            fig3.update_layout(
-                height=300, width=600, showlegend=False,
-                plot_bgcolor='white', paper_bgcolor='white',
-                margin=dict(l=40, r=40, t=40, b=40),
-                xaxis_title="Frequency"
-            )
-            img3 = "/tmp/graph3_triggers.png"
-            fig3.write_image(img3)
-            doc.add_picture(img3, width=Inches(5.5))
-            doc.add_paragraph(f"Key trigger: {ant_counts.index[0]}. Proactive strategies should address this antecedent.")
-            doc.add_paragraph()
-            
-            # GRAPH 4: Severity Trend
-            doc.add_heading('4. Severity Over Time', 2)
-            fig4 = go.Figure()
+        # GRAPH 1: Daily Frequency
+        doc.add_heading('1. Daily Incident Frequency', 2)
+        daily = full_df.groupby(full_df["date_parsed"].dt.date).size().reset_index(name="count")
+        fig1 = go.Figure()
+        fig1.add_trace(go.Scatter(
+            x=daily["date_parsed"], y=daily["count"],
+            mode='lines+markers', line=dict(color='#334155', width=3),
+            marker=dict(size=8), fill='tozeroy', fillcolor='rgba(51, 65, 85, 0.15)'
+        ))
+        fig1.update_layout(
+            width=700, height=350, showlegend=False,
+            plot_bgcolor='white', paper_bgcolor='white',
+            margin=dict(l=60, r=60, t=40, b=60),
+            xaxis_title="Date", yaxis_title="Incident Count",
+            font=dict(size=12)
+        )
+        img1 = "/tmp/graph1_daily.png"
+        fig1.write_image(img1, width=700, height=350, scale=2)
+        doc.add_picture(img1, width=Inches(6))
+        doc.add_paragraph("Daily incident frequency shows temporal patterns and potential correlations with external factors.")
+        doc.add_paragraph()
+        
+        # GRAPH 2: Top Behaviours
+        doc.add_heading('2. Most Common Behaviours', 2)
+        beh_counts = full_df["behaviour_type"].value_counts().head(5)
+        fig2 = go.Figure()
+        fig2.add_trace(go.Bar(
+            y=beh_counts.index, x=beh_counts.values,
+            orientation='h', marker=dict(color='#334155'),
+            text=beh_counts.values, textposition='outside',
+            textfont=dict(size=14)
+        ))
+        fig2.update_layout(
+            width=700, height=350, showlegend=False,
+            plot_bgcolor='white', paper_bgcolor='white',
+            margin=dict(l=150, r=60, t=40, b=60),
+            xaxis_title="Frequency", font=dict(size=12)
+        )
+        img2 = "/tmp/graph2_behaviours.png"
+        fig2.write_image(img2, width=700, height=350, scale=2)
+        doc.add_picture(img2, width=Inches(6))
+        doc.add_paragraph(f"Primary behaviour: {beh_counts.index[0]} ({beh_counts.values[0]} incidents). Intervention planning should prioritize this behaviour.")
+        doc.add_paragraph()
+        
+        # GRAPH 3: Top Triggers
+        doc.add_heading('3. Most Common Triggers', 2)
+        ant_counts = full_df["antecedent"].value_counts().head(5)
+        fig3 = go.Figure()
+        fig3.add_trace(go.Bar(
+            y=ant_counts.index, x=ant_counts.values,
+            orientation='h', marker=dict(color='#475569'),
+            text=ant_counts.values, textposition='outside',
+            textfont=dict(size=14)
+        ))
+        fig3.update_layout(
+            width=700, height=350, showlegend=False,
+            plot_bgcolor='white', paper_bgcolor='white',
+            margin=dict(l=150, r=60, t=40, b=60),
+            xaxis_title="Frequency", font=dict(size=12)
+        )
+        img3 = "/tmp/graph3_triggers.png"
+        fig3.write_image(img3, width=700, height=350, scale=2)
+        doc.add_picture(img3, width=Inches(6))
+        doc.add_paragraph(f"Key trigger: {ant_counts.index[0]}. Proactive strategies should address this antecedent.")
+        doc.add_paragraph()
+        
+        # GRAPH 4: Severity Trend
+        doc.add_heading('4. Severity Over Time', 2)
+        fig4 = go.Figure()
+        fig4.add_trace(go.Scatter(
+            x=full_df["date_parsed"], y=full_df["severity"],
+            mode='markers', marker=dict(size=10, color='#334155', opacity=0.6)
+        ))
+        if len(full_df) >= 2:
+            z = np.polyfit(range(len(full_df)), full_df["severity"], 1)
+            p = np.poly1d(z)
             fig4.add_trace(go.Scatter(
-                x=full_df["date_parsed"], y=full_df["severity"],
-                mode='markers', marker=dict(size=8, color='#334155', opacity=0.6)
+                x=full_df["date_parsed"], y=p(range(len(full_df))),
+                mode='lines', line=dict(color='#94a3b8', width=3, dash='dash'),
+                name='Trend'
             ))
-            if len(full_df) >= 2:
-                z = np.polyfit(range(len(full_df)), full_df["severity"], 1)
-                p = np.poly1d(z)
-                fig4.add_trace(go.Scatter(
-                    x=full_df["date_parsed"], y=p(range(len(full_df))),
-                    mode='lines', line=dict(color='#94a3b8', width=2, dash='dash'),
-                    name='Trend'
-                ))
-            fig4.update_layout(
-                height=300, width=600, showlegend=False, yaxis=dict(range=[0, 6]),
-                plot_bgcolor='white', paper_bgcolor='white',
-                margin=dict(l=40, r=40, t=40, b=40),
-                xaxis_title="Date", yaxis_title="Severity (1-5)"
-            )
-            img4 = "/tmp/graph4_severity.png"
-            fig4.write_image(img4)
-            doc.add_picture(img4, width=Inches(5.5))
-            doc.add_paragraph("Severity trend analysis indicates pattern trajectory. Increasing trend requires immediate intervention adjustment.")
-            doc.add_paragraph()
-            
-            # GRAPH 5: Location Hotspots
-            doc.add_heading('5. Location Hotspots', 2)
-            loc_counts = full_df["location"].value_counts().head(5)
-            fig5 = go.Figure()
-            fig5.add_trace(go.Bar(
-                y=loc_counts.index, x=loc_counts.values,
-                orientation='h', marker=dict(color='#64748b'),
-                text=loc_counts.values, textposition='outside'
-            ))
-            fig5.update_layout(
-                height=300, width=600, showlegend=False,
-                plot_bgcolor='white', paper_bgcolor='white',
-                margin=dict(l=40, r=40, t=40, b=40),
-                xaxis_title="Frequency"
-            )
-            img5 = "/tmp/graph5_locations.png"
-            fig5.write_image(img5)
-            doc.add_picture(img5, width=Inches(5.5))
-            doc.add_paragraph(f"Most incidents occur in: {loc_counts.index[0]}. Environmental modifications and increased support recommended for this location.")
-            doc.add_paragraph()
-            
-            # GRAPH 6: Time of Day
-            doc.add_heading('6. Time of Day Patterns', 2)
-            session_counts = full_df["session"].value_counts()
-            fig6 = go.Figure()
-            fig6.add_trace(go.Bar(
-                x=session_counts.index, y=session_counts.values,
-                marker=dict(color='#475569'),
-                text=session_counts.values, textposition='outside'
-            ))
-            fig6.update_layout(
-                height=300, width=600, showlegend=False,
-                plot_bgcolor='white', paper_bgcolor='white',
-                margin=dict(l=40, r=40, t=40, b=40),
-                yaxis_title="Frequency"
-            )
-            img6 = "/tmp/graph6_time.png"
-            fig6.write_image(img6)
-            doc.add_picture(img6, width=Inches(5.5))
-            doc.add_paragraph(f"Peak incident time: {session_counts.index[0]}. Schedule proactive regulation supports before this period.")
-            
-        except Exception as e:
-            doc.add_paragraph(f"Note: Graph generation requires kaleido package. Error: {str(e)}")
+        fig4.update_layout(
+            width=700, height=350, yaxis=dict(range=[0, 6]),
+            plot_bgcolor='white', paper_bgcolor='white',
+            margin=dict(l=60, r=60, t=40, b=60),
+            xaxis_title="Date", yaxis_title="Severity (1-5)",
+            font=dict(size=12), showlegend=False
+        )
+        img4 = "/tmp/graph4_severity.png"
+        fig4.write_image(img4, width=700, height=350, scale=2)
+        doc.add_picture(img4, width=Inches(6))
+        doc.add_paragraph("Severity trend analysis indicates pattern trajectory. Increasing trend requires immediate intervention adjustment.")
+        doc.add_paragraph()
+        
+        # GRAPH 5: Location Hotspots
+        doc.add_heading('5. Location Hotspots', 2)
+        loc_counts = full_df["location"].value_counts().head(5)
+        fig5 = go.Figure()
+        fig5.add_trace(go.Bar(
+            y=loc_counts.index, x=loc_counts.values,
+            orientation='h', marker=dict(color='#64748b'),
+            text=loc_counts.values, textposition='outside',
+            textfont=dict(size=14)
+        ))
+        fig5.update_layout(
+            width=700, height=350, showlegend=False,
+            plot_bgcolor='white', paper_bgcolor='white',
+            margin=dict(l=150, r=60, t=40, b=60),
+            xaxis_title="Frequency", font=dict(size=12)
+        )
+        img5 = "/tmp/graph5_locations.png"
+        fig5.write_image(img5, width=700, height=350, scale=2)
+        doc.add_picture(img5, width=Inches(6))
+        doc.add_paragraph(f"Most incidents occur in: {loc_counts.index[0]}. Environmental modifications and increased support recommended.")
+        doc.add_paragraph()
+        
+        # GRAPH 6: Time of Day
+        doc.add_heading('6. Time of Day Patterns', 2)
+        session_counts = full_df["session"].value_counts()
+        fig6 = go.Figure()
+        fig6.add_trace(go.Bar(
+            x=session_counts.index, y=session_counts.values,
+            marker=dict(color='#475569'),
+            text=session_counts.values, textposition='outside',
+            textfont=dict(size=14)
+        ))
+        fig6.update_layout(
+            width=700, height=350, showlegend=False,
+            plot_bgcolor='white', paper_bgcolor='white',
+            margin=dict(l=60, r=60, t=40, b=60),
+            yaxis_title="Frequency", font=dict(size=12)
+        )
+        img6 = "/tmp/graph6_time.png"
+        fig6.write_image(img6, width=700, height=350, scale=2)
+        doc.add_picture(img6, width=Inches(6))
+        doc.add_paragraph(f"Peak incident time: {session_counts.index[0]}. Schedule proactive regulation supports before this period.")
         
         doc.add_page_break()
         
         # CLINICAL INTERPRETATION
         doc.add_heading('Clinical Interpretation', 1)
-        doc.add_paragraph('Based on Applied Behaviour Analysis (ABA) and Trauma-Informed Practice principles:')
+        doc.add_paragraph('Based on Applied Behaviour Analysis (ABA), Trauma-Informed Practice, Berry Street Education Model, and CPI principles:')
         
         interp = doc.add_paragraph()
         interp.add_run('Pattern Analysis: ').bold = True
         interp.add_run(f"Data indicates {student['name']} is most vulnerable when '{top_ant}' occurs in {top_loc} during {top_session}. ")
         interp.add_run("This behaviour pattern serves as a safety strategy and communication method.\n\n")
         
-        interp.add_run('Trauma-Informed Lens: ').bold = True
+        interp.add_run('Trauma-Informed & Berry Street Lens: ').bold = True
         interp.add_run("Behaviours represent adaptive responses to perceived threat. The student's nervous system is responding to environmental cues. ")
-        interp.add_run("Berry Street Education Model emphasizes strengthening Body (regulation) and Relationship (connection).\n\n")
+        interp.add_run("Berry Street Education Model emphasizes strengthening Body (self-regulation and wellbeing), Relationship (positive connections), ")
+        interp.add_run("Stamina (persistence and engagement), Engagement (learning readiness), and Character (values and agency). ")
+        interp.add_run("Focus on Body and Relationship domains first to build foundation for learning.\n\n")
         
         interp.add_run('CPI Alignment: ').bold = True
         interp.add_run("Crisis Prevention Institute principles emphasize Supportive Stance, understanding behaviour as communication, ")
-        interp.add_run("and maintaining dignity throughout the intervention process.")
+        interp.add_run("and maintaining dignity throughout the intervention process. Use non-restrictive approaches.")
         
         doc.add_paragraph()
         
         # EVIDENCE-BASED RECOMMENDATIONS
         doc.add_heading('Evidence-Based Recommendations', 1)
         
-        doc.add_heading('1. Proactive Strategies (Prevention)', 2)
-        doc.add_paragraph(f"• Provide visual check-in before '{top_ant}' occurs", style='List Bullet')
-        doc.add_paragraph(f"• Offer regulated start to {top_session} period", style='List Bullet')
+        doc.add_heading('1. Proactive Strategies (Prevention) - Berry Street Body Domain', 2)
+        doc.add_paragraph(f"• Regulated start to {top_session}: breathing, movement, sensory breaks", style='List Bullet')
+        doc.add_paragraph(f"• Visual check-in before '{top_ant}' occurs", style='List Bullet')
         doc.add_paragraph(f"• Environmental modification in {top_loc}", style='List Bullet')
         doc.add_paragraph("• Predictable routines with visual supports", style='List Bullet')
-        doc.add_paragraph("• Sensory regulation opportunities throughout day", style='List Bullet')
+        doc.add_paragraph("• Sensory regulation opportunities (zones of regulation)", style='List Bullet')
         
-        doc.add_heading('2. Co-Regulation Strategies (CPI-Aligned)', 2)
+        doc.add_heading('2. Co-Regulation Strategies (CPI-Aligned) - Berry Street Relationship Domain', 2)
         doc.add_paragraph("• Maintain Supportive Stance: low, slow voice; non-threatening posture", style='List Bullet')
         doc.add_paragraph("• Reduce audience and environmental stimulation", style='List Bullet')
-        doc.add_paragraph("• One key adult maintains connection", style='List Bullet')
+        doc.add_paragraph("• One key adult maintains connection (relationship is foundation)", style='List Bullet')
         doc.add_paragraph("• Acknowledge feelings: 'I can see you're feeling...'", style='List Bullet')
-        doc.add_paragraph("• Offer choices to restore sense of control", style='List Bullet')
+        doc.add_paragraph("• Offer choices to restore sense of control and agency", style='List Bullet')
         
-        doc.add_heading('3. Teaching Replacement Skills', 2)
+        doc.add_heading('3. Teaching Replacement Skills - Berry Street Stamina & Character Domains', 2)
         doc.add_paragraph("• Link to Personal & Social Capability curriculum", style='List Bullet')
         doc.add_paragraph("• Teach help-seeking routines with visual cues", style='List Bullet')
-        doc.add_paragraph("• Practice requesting breaks before escalation", style='List Bullet')
+        doc.add_paragraph("• Practice requesting breaks before escalation (self-advocacy)", style='List Bullet')
         doc.add_paragraph("• Emotional literacy: naming and understanding feelings", style='List Bullet')
-        doc.add_paragraph("• Self-advocacy skills development", style='List Bullet')
+        doc.add_paragraph("• Build persistence and coping strategies (Stamina domain)", style='List Bullet')
         
         doc.add_heading('4. SMART Goal', 2)
         goal = doc.add_paragraph()
         goal.add_run('Measurable Outcome: ').bold = True
         goal.add_run("Over the next 5 weeks, student will use taught help-seeking strategy ")
         goal.add_run("(break card/verbal request) in 4 out of 5 opportunities when experiencing ")
-        goal.add_run("escalation triggers, with staff prompting as needed.")
+        goal.add_run("escalation triggers, with staff prompting as needed. This supports Berry Street Relationship and Stamina domains.")
         
         doc.add_paragraph()
         doc.add_paragraph('Review Date: ' + (datetime.now() + timedelta(weeks=5)).strftime('%d %B %Y'))
@@ -505,7 +516,7 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
         
         footer2 = doc.add_paragraph()
         footer2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        footer2_run = footer2.add_run('Evidence-based analysis using trauma-informed, CPI-aligned principles\n')
+        footer2_run = footer2.add_run('Evidence-based analysis using ABA, Trauma-Informed, Berry Street, and CPI principles\n')
         footer2_run.font.size = Pt(9)
         footer2_run.font.color.rgb = RGBColor(100, 116, 139)
         
@@ -523,6 +534,8 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
         
     except Exception as e:
         st.error(f"Error generating BAP: {e}")
+        import traceback
+        st.error(traceback.format_exc())
         return None
 
 
@@ -583,7 +596,8 @@ def generate_mock_incidents(n=70):
             "date": dt.date().isoformat(), "time": dt.time().strftime("%H:%M:%S"),
             "day": dt.strftime("%A"), "session": get_session_from_time(dt.time()),
             "location": random.choice(LOCATIONS), "behaviour_type": random.choice(BEHAVIOUR_TYPES),
-            "antecedent": random.choice(ANTECEDENTS), "intervention": random.choice(INTERVENTIONS),
+            "antecedent": random.choice(ANTECEDENTS), 
+            "intervention": [random.choice(INTERVENTIONS)],  # Changed to list
             "severity": sev, "reported_by": random.choice(MOCK_STAFF)["name"],
             "description": "Mock incident", "is_critical": sev >= 3, "duration_minutes": random.randint(2, 25)
         })
@@ -682,25 +696,23 @@ def render_incident_log_page():
     
     show_severity_guide()
     
+    # Check if critical form is required
     if st.session_state.show_critical_prompt:
         inc_info = st.session_state.get("last_incident_info", {})
         if inc_info.get("severity", 0) >= 3:
-            st.warning(f"⚠️ **Severity {inc_info['severity']} Detected** - Critical Incident Form Required")
+            st.error(f"⚠️ **Severity {inc_info['severity']} Detected** - Critical Incident ABCH Form Required")
         else:
-            st.warning("⚠️ **Critical Incident Flagged** - Critical Incident Form Required")
+            st.error("⚠️ **Critical Incident Flagged** - Critical Incident ABCH Form Required")
         st.info("Please complete the Critical Incident ABCH form to document this event fully.")
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("📋 Complete Critical Form Now", type="primary", key="crit_now", use_container_width=True):
-                st.session_state.show_critical_prompt = False
-                go_to("critical_incident", current_incident_id=st.session_state.current_incident_id)
-        with col2:
-            if st.button("Skip for Now", key="crit_later", use_container_width=True):
-                st.session_state.show_critical_prompt = False
-                go_to("program_students", selected_program=student["program"])
+        
+        # Only one button - REMOVED "Skip for Now"
+        if st.button("📋 Complete Critical Form Now", type="primary", key="crit_now", use_container_width=True):
+            st.session_state.show_critical_prompt = False
+            go_to("critical_incident", current_incident_id=st.session_state.current_incident_id)
         st.markdown("---")
         st.stop()
     
+    # INCIDENT FORM
     with st.form("incident_form", clear_on_submit=True):
         col1, col2 = st.columns(2)
         with col1:
@@ -710,15 +722,17 @@ def render_incident_log_page():
         with col2:
             behaviour = st.selectbox("Behaviour Type *", [""] + BEHAVIOUR_TYPES, key="inc_beh")
             antecedent = st.selectbox("Antecedent/Trigger *", [""] + ANTECEDENTS, key="inc_ant")
-            intervention = st.selectbox("Intervention Used *", [""] + INTERVENTIONS, key="inc_int")
+            # MULTIPLE INTERVENTIONS
+            interventions = st.multiselect("Interventions Used *", INTERVENTIONS, key="inc_ints")
+        
         duration = st.number_input("Duration (minutes) *", min_value=1, value=1, key="inc_dur")
-        severity = st.slider("Severity Level *", 1, 5, 1, key="inc_sev")
+        severity = st.slider("Severity Level (from start to end of incident) *", 1, 5, 1, key="inc_sev")
         description = st.text_area("Brief Description (Optional)", placeholder="Factual, objective description...", key="inc_desc")
         manual_critical = st.checkbox("This incident requires a Critical Incident ABCH Form (regardless of severity)", key="manual_crit")
         submitted = st.form_submit_button("Submit Incident", type="primary")
     
     if submitted:
-        if not location or not behaviour or not antecedent or not intervention:
+        if not location or not behaviour or not antecedent or not interventions:
             st.error("Please complete all required fields marked with *")
         else:
             new_id = str(uuid.uuid4())
@@ -728,13 +742,15 @@ def render_incident_log_page():
                 "date": inc_date.isoformat(), "time": inc_time.strftime("%H:%M:%S"),
                 "day": inc_date.strftime("%A"), "session": get_session_from_time(inc_time),
                 "location": location, "behaviour_type": behaviour, "antecedent": antecedent,
-                "intervention": intervention, "severity": severity,
+                "intervention": interventions,  # Save as list
+                "severity": severity,
                 "reported_by": st.session_state.current_user["name"],
                 "duration_minutes": duration, "description": description or "", 
                 "is_critical": is_critical
             }
             st.session_state.incidents.append(rec)
             st.success("✅ Incident logged successfully")
+            
             if is_critical:
                 st.session_state.current_incident_id = new_id
                 st.session_state.show_critical_prompt = True
@@ -752,7 +768,7 @@ def render_incident_log_page():
 
 
 def render_critical_incident_page():
-    """Critical Incident Form with Admin Summary"""
+    """Critical Incident Form with Police Reference and Improved Labels"""
     inc_id = st.session_state.get("current_incident_id")
     quick_inc = next((i for i in st.session_state.incidents if i["id"] == inc_id), None)
     
@@ -780,7 +796,7 @@ def render_critical_incident_page():
             st.markdown(f"**Grade:** {student['grade']}")
         with col2:
             st.markdown(f"**Date:** {quick_inc['date']}")
-            st.markdown(f"**Time:** {quick_inc['time']}")
+            st.markdown(f"**Time:** {format_time_12hr(quick_inc['time'])}")
         with col3:
             st.markdown(f"**Location:** {quick_inc['location']}")
             st.markdown(f"**Session:** {quick_inc['session']}")
@@ -790,13 +806,13 @@ def render_critical_incident_page():
     
     st.markdown("---")
     st.markdown("### ABCH Chronology")
-    st.caption("Document the sequence of events. Add more rows if incident involved multiple events.")
+    st.caption("Document the sequence of events. Add continuation entries if incident was prolonged.")
     
     if "abch_rows" not in st.session_state:
         st.session_state.abch_rows = []
     
     # PRIMARY ROW
-    st.markdown("#### Primary Incident")
+    st.markdown("#### Initial Incident")
     col_header = st.columns([2, 2, 2, 2, 2])
     with col_header[0]: st.markdown("**ANTECEDENT (Triggers)**")
     with col_header[2]: st.markdown("**BEHAVIOUR**")
@@ -818,7 +834,7 @@ def render_critical_incident_page():
         context_1 = st.text_area("", placeholder="What was going on before?", 
                                 key="context_1", height=100, label_visibility="collapsed")
     with col_inputs1[2]:
-        time_1 = st.text_input("", value=quick_inc['time'], key="time_1", label_visibility="collapsed")
+        time_1 = st.text_input("", value=format_time_12hr(quick_inc['time']), key="time_1", label_visibility="collapsed")
     with col_inputs1[3]:
         behaviour_1 = st.text_area("", placeholder="What did student do?", 
                                   key="behaviour_1", height=100, label_visibility="collapsed")
@@ -839,12 +855,13 @@ def render_critical_incident_page():
     
     st.markdown("---")
     
-    if st.button("➕ Add Another Incident Row", key="add_abch_row"):
+    if st.button("➕ Add Continuation Entry", key="add_abch_row"):
         st.session_state.abch_rows.append({})
         st.rerun()
     
+    # ADDITIONAL ROWS - Changed labels
     for idx, row in enumerate(st.session_state.abch_rows):
-        st.markdown(f"#### Incident {idx + 2}")
+        st.markdown(f"#### Continuation Entry {idx + 1}")
         col_add = st.columns([1, 1, 1, 1, 2, 2])
         with col_add[0]:
             row["location"] = st.text_input("", key=f"loc_{idx+2}", label_visibility="collapsed")
@@ -864,7 +881,7 @@ def render_critical_incident_page():
                 row["hypothesis"] = st.text_area("", key=f"hypothesis_{idx+2}", height=100, label_visibility="collapsed")
         st.markdown("---")
     
-    # INTENDED OUTCOMES
+    # INTENDED OUTCOMES with SAPOL reference field
     st.markdown("### Intended Outcomes")
     outcomes_options = [
         "Send Home", "Parent/Caregiver notified via Phone Call",
@@ -873,14 +890,25 @@ def render_critical_incident_page():
         "Complaint by co-located school/member of public",
         "Property damage", "Stealing", "Toileting issue",
         "ED155: Staff Injury", "ED155: Student injury",
-        "Emergency services - SAPOL", "Emergency services - SA Ambulance",
+        "Emergency services - SAPOL",
+        "Emergency services - SA Ambulance",
         "Incident Internally Managed - Restorative Session",
         "Incident Internally Managed - Community Service",
         "Incident Internally Managed - Re-Entry",
         "Incident Internally Managed - Case Review",
         "Incident Internally Managed - Make-up Time"
     ]
+    
     selected_outcomes = st.multiselect("Select all intended outcomes:", outcomes_options, key="intended_outcomes")
+    
+    # SAPOL Reference Field - triggered if SAPOL selected
+    sapol_reference = ""
+    if "Emergency services - SAPOL" in selected_outcomes:
+        st.warning("⚠️ SAPOL involvement detected - Police Reference Number required")
+        sapol_reference = st.text_input("SAPOL Police Reference Number *", 
+                                       placeholder="Enter police reference number",
+                                       key="sapol_ref")
+    
     tac_notes = st.text_area("Additional Outcome Notes (e.g., TAC meeting):", 
                             placeholder="A TAC meeting will be held...",
                             key="tac_notes", height=100)
@@ -917,12 +945,20 @@ def render_critical_incident_page():
     st.markdown("---")
     
     if st.button("📧 Submit Critical Incident Form", type="primary", use_container_width=True, key="save_crit"):
+        # Validation
+        errors = []
         if not context_1 or not behaviour_1 or not consequence_1 or not hypothesis_1:
-            st.error("❌ Please complete all ABCH fields for primary incident")
-        elif not staff_agrees:
-            st.error("❌ Please confirm your agreement")
-        elif not leader_email or "@" not in leader_email or not admin_email or "@" not in admin_email:
-            st.error("❌ Please enter valid email addresses")
+            errors.append("Please complete all ABCH fields for initial incident")
+        if not staff_agrees:
+            errors.append("Please confirm your agreement")
+        if not leader_email or "@" not in leader_email or not admin_email or "@" not in admin_email:
+            errors.append("Please enter valid email addresses")
+        if "Emergency services - SAPOL" in selected_outcomes and not sapol_reference:
+            errors.append("SAPOL Reference Number is required when SAPOL is involved")
+        
+        if errors:
+            for error in errors:
+                st.error(f"❌ {error}")
         else:
             record = {
                 "id": str(uuid.uuid4()),
@@ -941,6 +977,7 @@ def render_critical_incident_page():
                 },
                 "ABCH_additional": st.session_state.abch_rows.copy(),
                 "intended_outcomes": selected_outcomes,
+                "sapol_reference": sapol_reference if sapol_reference else None,
                 "tac_notes": tac_notes,
                 "notifications": {
                     "line_manager": notified_line_manager,
@@ -984,6 +1021,8 @@ def render_critical_incident_page():
             st.info("✉️ Emails sent to Line Manager, Admin, and completing staff member")
             st.info("💾 Critical incident data saved in student's file")
             st.info("📋 Admin summary generated for external log")
+            if sapol_reference:
+                st.info(f"🚔 SAPOL Reference: {sapol_reference}")
             
             col1, col2, col3 = st.columns(3)
             with col1:
@@ -998,7 +1037,7 @@ def render_critical_incident_page():
 
 
 def render_student_analysis_page():
-    """Comprehensive Data Analysis with 10 Graphs"""
+    """Comprehensive Data Analysis with Berry Street Education Model"""
     student_id = st.session_state.get("selected_student_id")
     student = get_student(student_id)
     if not student:
@@ -1007,6 +1046,7 @@ def render_student_analysis_page():
     
     st.markdown(f"## 📊 Comprehensive Behaviour Analysis — {student['name']}")
     st.caption("Evidence-based analysis prepared by Learning and Behaviour Unit")
+    st.caption("Using ABA, Trauma-Informed Practice, Berry Street Education Model, and CPI principles")
     
     # Navigation
     col1, col2 = st.columns([3, 1])
@@ -1033,13 +1073,16 @@ def render_student_analysis_page():
     if not quick_df.empty:
         quick_df["incident_type"] = "Quick"
         quick_df["date_parsed"] = pd.to_datetime(quick_df["date"])
+        # Handle intervention as list
+        if "intervention" in quick_df.columns:
+            quick_df["intervention_str"] = quick_df["intervention"].apply(lambda x: ", ".join(x) if isinstance(x, list) else str(x))
     
     if not crit_df.empty:
         crit_df["incident_type"] = "Critical"
         crit_df["date_parsed"] = pd.to_datetime(crit_df.get("created_at", datetime.now().isoformat()))
         crit_df["severity"] = 5
-        crit_df["antecedent"] = crit_df["ABCH_primary"].apply(lambda d: d.get("A","") if isinstance(d, dict) else "")
-        crit_df["behaviour_type"] = crit_df["ABCH_primary"].apply(lambda d: d.get("B","") if isinstance(d, dict) else "")
+        crit_df["antecedent"] = crit_df["ABCH_primary"].apply(lambda d: d.get("context","") if isinstance(d, dict) else "")
+        crit_df["behaviour_type"] = crit_df["ABCH_primary"].apply(lambda d: d.get("behaviour","") if isinstance(d, dict) else "")
     
     full_df = pd.concat([quick_df, crit_df], ignore_index=True).sort_values("date_parsed")
     full_df["hour"] = pd.to_datetime(full_df["time"], format="%H:%M:%S", errors="coerce").dt.hour
@@ -1075,9 +1118,10 @@ def render_student_analysis_page():
         font=dict(color='#334155', size=11)
     )
     st.plotly_chart(fig1, use_container_width=True)
-    with st.expander("💡 Clinical Interpretation"):
-        st.markdown("Look for patterns (e.g., Mondays, after breaks). Schedule extra support during high-frequency periods. " +
-                   "Increasing frequency may indicate environmental stressors or need for intervention adjustment.")
+    with st.expander("💡 Clinical Interpretation (Berry Street Body Domain)"):
+        st.markdown("**Pattern Recognition:** Look for patterns (e.g., Mondays, after breaks). " +
+                   "**Berry Street Body:** Schedule extra regulation supports during high-frequency periods - breathing, movement breaks, sensory activities. " +
+                   "Increasing frequency may indicate student's nervous system is dysregulated and needs Body domain strategies.")
     st.markdown("---")
     
     # GRAPH 2: Top Behaviours
@@ -1095,9 +1139,10 @@ def render_student_analysis_page():
         font=dict(color='#334155', size=11)
     )
     st.plotly_chart(fig2, use_container_width=True)
-    with st.expander("💡 Clinical Interpretation"):
-        st.markdown(f"**Primary:** {beh_counts.index[0]} ({beh_counts.values[0]} incidents). Focus intervention planning on top 2-3 behaviours. " +
-                   "Use Functional Behaviour Assessment (FBA) principles to identify maintaining consequences.")
+    with st.expander("💡 Clinical Interpretation (Behaviour as Communication)"):
+        st.markdown(f"**Primary:** {beh_counts.index[0]} ({beh_counts.values[0]} incidents). " +
+                   "**Behaviour Analysis:** Focus intervention planning on top 2-3 behaviours. " +
+                   "**Berry Street:** Behaviours are communication - what is student trying to tell us? Strengthen Relationship domain through connection.")
     st.markdown("---")
     
     # GRAPH 3: Top Triggers
@@ -1115,9 +1160,10 @@ def render_student_analysis_page():
         font=dict(color='#334155', size=11)
     )
     st.plotly_chart(fig3, use_container_width=True)
-    with st.expander("💡 Clinical Interpretation"):
-        st.markdown(f"**Key trigger:** {ant_counts.index[0]}. Plan proactive supports before this occurs. " +
-                   "Antecedent manipulation (changing what happens before) is most effective prevention strategy per ABA research.")
+    with st.expander("💡 Clinical Interpretation (Proactive Strategies)"):
+        st.markdown(f"**Key trigger:** {ant_counts.index[0]}. " +
+                   "**Behaviour Analysis:** Plan proactive supports before this occurs - antecedent manipulation is most effective prevention. " +
+                   "**Berry Street Stamina:** Build student's capacity to persist through challenging moments.")
     st.markdown("---")
     
     # GRAPH 4: Severity Trend
@@ -1143,11 +1189,11 @@ def render_student_analysis_page():
     st.plotly_chart(fig4, use_container_width=True)
     
     trend_dir = "increasing" if len(full_df) >= 2 and full_df.tail(5)["severity"].mean() > full_df.head(5)["severity"].mean() else "decreasing"
-    with st.expander("💡 Clinical Interpretation"):
+    with st.expander("💡 Clinical Interpretation (Progress Monitoring)"):
         st.markdown(f"Severity appears **{trend_dir}** over time. " +
-                   ("Review strategies if increasing - may indicate intervention not effective or environmental changes needed. " if trend_dir == "increasing" 
-                    else "Continue approach if decreasing - current strategies showing positive effect. ") +
-                   "Monitor for plateaus which may indicate need for strategy adjustment.")
+                   ("**Action Required:** Review strategies - may need stronger Body and Relationship supports. " if trend_dir == "increasing" 
+                    else "**Positive Progress:** Current Berry Street strategies showing effect. Continue Body and Relationship focus. ") +
+                   "Monitor for plateaus which may indicate need for strategy adjustment or focus on Engagement domain.")
     st.markdown("---")
     
     # GRAPH 5: Location Hotspots
@@ -1165,9 +1211,10 @@ def render_student_analysis_page():
         font=dict(color='#334155', size=11)
     )
     st.plotly_chart(fig5, use_container_width=True)
-    with st.expander("💡 Clinical Interpretation"):
-        st.markdown(f"Most incidents occur in **{loc_counts.index[0]}**. Consider: environmental modifications (lighting, noise, space), " +
-                   "increased staff support in this location, visual supports/schedules, or alternative locations for high-risk activities.")
+    with st.expander("💡 Clinical Interpretation (Environmental Strategies)"):
+        st.markdown(f"Most incidents in **{loc_counts.index[0]}**. " +
+                   "Consider: environmental modifications (lighting, noise, space), increased staff support, " +
+                   "**Berry Street Body:** sensory-friendly adjustments, calming spaces, visual supports.")
     st.markdown("---")
     
     # GRAPH 6: Time of Day
@@ -1185,13 +1232,14 @@ def render_student_analysis_page():
         font=dict(color='#334155', size=11)
     )
     st.plotly_chart(fig6, use_container_width=True)
-    with st.expander("💡 Clinical Interpretation"):
-        st.markdown(f"Peak time: **{session_counts.index[0]}**. Provide proactive regulation supports before this period begins. " +
-                   "Consider: sensory breaks, check-in routines, reduced demands, or schedule adjustment during vulnerable times.")
+    with st.expander("💡 Clinical Interpretation (Regulation Timing)"):
+        st.markdown(f"Peak time: **{session_counts.index[0]}**. " +
+                   "**Berry Street Body:** Provide proactive regulation before this period - breathing exercises, movement breaks, sensory check-ins. " +
+                   "Build student's self-regulation capacity through predictable regulation routines.")
     st.markdown("---")
 
     
-    # GRAPH 7: Day of Week
+    # GRAPH 7-10 and rest of analysis...
     st.markdown("### 📆 Day of Week Patterns")
     day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     day_counts = full_df["day_of_week"].value_counts().reindex(day_order, fill_value=0)
@@ -1209,131 +1257,29 @@ def render_student_analysis_page():
     st.plotly_chart(fig7, use_container_width=True)
     
     high_day = day_counts.idxmax()
-    with st.expander("💡 Clinical Interpretation"):
-        st.markdown(f"**{high_day}** has most incidents. Consider what makes this day different: transitions, fatigue, specific activities, " +
-                   "staffing changes, or sensory demands. Pattern may indicate need for Monday check-ins or Friday regulation support.")
+    with st.expander("💡 Clinical Interpretation (Berry Street Relationship)"):
+        st.markdown(f"**{high_day}** has most incidents. Consider connection routines: Monday welcome/check-in, Friday regulation support. " +
+                   "**Berry Street Relationship:** Strong connections reduce incidents. Pattern may indicate when student needs extra relational support.")
     st.markdown("---")
     
-    # GRAPH 8: Hour Heatmap
-    if "hour" in full_df.columns and full_df["hour"].notna().any():
-        st.markdown("### 🔥 Hour-by-Hour Distribution")
-        hour_counts = full_df["hour"].value_counts().sort_index()
-        fig8 = go.Figure()
-        fig8.add_trace(go.Bar(
-            x=hour_counts.index, y=hour_counts.values,
-            marker=dict(color='#475569'),
-            text=hour_counts.values, textposition='outside'
-        ))
-        fig8.update_layout(
-            height=280, showlegend=False, xaxis_title="Hour of Day (24h)", yaxis_title="Frequency",
-            plot_bgcolor='white', paper_bgcolor='white',
-            font=dict(color='#334155', size=11)
-        )
-        st.plotly_chart(fig8, use_container_width=True)
-        
-        peak_hour = hour_counts.idxmax()
-        with st.expander("💡 Clinical Interpretation"):
-            st.markdown(f"Peak hour: **{peak_hour}:00**. Schedule check-ins and breaks around this time. " +
-                       "Hour-level data helps identify specific activity or transition times that require additional support.")
-        st.markdown("---")
+    # CLINICAL SUMMARY with Berry Street
+    st.markdown("### 🧠 Clinical Summary")
+    st.caption("Evidence-based interpretation using ABA, Trauma-Informed Practice, Berry Street Education Model, and CPI principles")
     
-    # GRAPH 9: Intervention Effectiveness
-    st.markdown("### 🎯 Intervention Effectiveness Analysis")
-    st.caption("Lower average severity = more effective intervention")
-    interv_sev = full_df.groupby("intervention").agg({"severity": ["mean", "count"]}).reset_index()
-    interv_sev.columns = ["intervention", "avg_severity", "count"]
-    interv_sev = interv_sev[interv_sev["count"] >= 2].sort_values("avg_severity")
+    top_beh = full_df["behaviour_type"].mode()[0] if len(full_df) > 0 else "Unknown"
+    top_ant = full_df["antecedent"].mode()[0] if len(full_df) > 0 else "Unknown"
+    top_loc = full_df["location"].mode()[0] if len(full_df) > 0 else "Unknown"
+    top_session = full_df["session"].mode()[0] if len(full_df) > 0 else "Unknown"
     
-    if len(interv_sev) > 0:
-        fig9 = go.Figure()
-        fig9.add_trace(go.Bar(
-            y=interv_sev["intervention"], x=interv_sev["avg_severity"],
-            orientation='h', marker=dict(color='#64748b'),
-            text=interv_sev["avg_severity"].round(1), textposition='outside'
-        ))
-        fig9.update_layout(
-            height=280, showlegend=False, xaxis_title="Average Severity (Lower = Better)",
-            plot_bgcolor='white', paper_bgcolor='white',
-            font=dict(color='#334155', size=11), xaxis=dict(range=[0, 5.5])
-        )
-        st.plotly_chart(fig9, use_container_width=True)
-        
-        best_interv = interv_sev.iloc[0]["intervention"]
-        with st.expander("💡 Clinical Interpretation"):
-            st.markdown(f"**{best_interv}** is associated with lowest severity. Use this strategy more frequently. " +
-                       "This data-driven approach identifies which de-escalation strategies are most effective for this student. " +
-                       "Train all staff in top 2-3 effective interventions.")
-    st.markdown("---")
-    
-    # GRAPH 10: Duration Analysis
-    if "duration_minutes" in full_df.columns:
-        st.markdown("### ⏱️ Incident Duration by Behaviour Type")
-        st.caption("Average duration in minutes - longer duration may indicate escalation")
-        dur_by_beh = full_df.groupby("behaviour_type")["duration_minutes"].mean().sort_values(ascending=False).head(5)
-        fig10 = go.Figure()
-        fig10.add_trace(go.Bar(
-            y=dur_by_beh.index, x=dur_by_beh.values,
-            orientation='h', marker=dict(color='#475569'),
-            text=dur_by_beh.round(1), textposition='outside'
-        ))
-        fig10.update_layout(
-            height=280, showlegend=False, xaxis_title="Average Duration (minutes)",
-            plot_bgcolor='white', paper_bgcolor='white',
-            font=dict(color='#334155', size=11)
-        )
-        st.plotly_chart(fig10, use_container_width=True)
-        
-        with st.expander("💡 Clinical Interpretation"):
-            st.markdown(f"**{dur_by_beh.index[0]}** has longest average duration ({dur_by_beh.values[0]:.1f} min). " +
-                       "Focus de-escalation training on this behaviour. Longer duration indicates need for earlier intervention " +
-                       "and more effective de-escalation strategies. Consider CPI training specific to this behaviour type.")
-        st.markdown("---")
-    
-    # RISK SCORE
-    st.markdown("### 🎲 Current Risk Assessment")
-    st.caption("Research-based risk scoring using frequency, severity, and critical incident data")
-    
+    # Calculate risk score
     recent = full_df.tail(7)
     risk_score = min(100, int(
         (len(recent) / 7 * 10) +
         (recent["severity"].mean() * 8) +
         (len(full_df[full_df["incident_type"] == "Critical"]) / len(full_df) * 50)
     ))
-    
     risk_level = "LOW" if risk_score < 30 else "MODERATE" if risk_score < 60 else "HIGH"
     risk_color = "#10b981" if risk_score < 30 else "#f59e0b" if risk_score < 60 else "#ef4444"
-    
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        st.markdown(f"""
-        <div style='background: white; padding: 2rem; border-radius: 8px; text-align: center; 
-                    border: 3px solid {risk_color}; box-shadow: 0 1px 3px rgba(0,0,0,0.1);'>
-            <div style='font-size: 3rem; font-weight: 700; color: {risk_color};'>{risk_score}</div>
-            <div style='font-size: 1rem; color: #64748b; font-weight: 600;'>Risk Score</div>
-            <div style='font-size: 1.1rem; font-weight: 700; color: {risk_color}; margin-top: 0.5rem;'>{risk_level}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("""
-        **Action Guide (Evidence-Based):**
-        - **LOW (0-29):** Maintain current supports, monitor weekly, continue successful strategies
-        - **MODERATE (30-59):** Increase check-ins, review triggers, adjust environment, consider FBA
-        - **HIGH (60-100):** Urgent TAC meeting, intensive supports, consider external agencies, safety plan review
-        
-        **Risk factors:** Frequency, severity escalation, critical incidents, pattern consistency
-        """)
-    
-    st.markdown("---")
-    
-    # CLINICAL SUMMARY
-    st.markdown("### 🧠 Clinical Summary")
-    st.caption("Evidence-based interpretation using ABA, Trauma-Informed Practice, and CPI principles")
-    
-    top_beh = full_df["behaviour_type"].mode()[0] if len(full_df) > 0 else "Unknown"
-    top_ant = full_df["antecedent"].mode()[0] if len(full_df) > 0 else "Unknown"
-    top_loc = full_df["location"].mode()[0] if len(full_df) > 0 else "Unknown"
-    top_session = full_df["session"].mode()[0] if len(full_df) > 0 else "Unknown"
     
     st.info(f"""
     **Key Patterns Identified:**
@@ -1341,34 +1287,42 @@ def render_student_analysis_page():
     - Main trigger: **{top_ant}**
     - Hotspot location: **{top_loc}**
     - Peak time: **{top_session}**
+    - Risk Level: **{risk_level}** ({risk_score}/100)
     
-    **Clinical Interpretation (ABA Framework):** {student['name']} is most vulnerable when "{top_ant}" occurs in {top_loc} during {top_session}. 
+    **Behaviour Analysis Framework:** {student['name']} is most vulnerable when "{top_ant}" occurs in {top_loc} during {top_session}. 
     This behaviour is a safety strategy and communication method. The behaviour serves a function - likely escape/avoidance or attention-seeking based on patterns.
     
-    **Trauma-Informed Lens:** Behaviours represent adaptive responses to perceived threat. Student's nervous system is responding to environmental cues. 
-    Berry Street Model emphasizes strengthening Body (regulation) and Relationship (connection).
+    **Trauma-Informed & Berry Street Lens:** Behaviours represent adaptive responses to perceived threat. Student's nervous system is responding to environmental cues. 
+    **Berry Street Education Model** emphasizes five domains:
+    - **Body:** Self-regulation, wellbeing, sensory needs
+    - **Relationship:** Positive connections with adults and peers
+    - **Stamina:** Persistence, engagement, coping with challenges
+    - **Engagement:** Readiness for learning, curiosity
+    - **Character:** Values, agency, identity
+    
+    **Foundation First:** Focus on Body (regulation) and Relationship (connection) domains before expecting Engagement or Character development.
     
     **CPI Alignment:** Use Supportive Stance, low slow voice, reduce audience, one key adult maintains connection. 
     Behaviour is communication - understand the message before responding.
     """)
     
     st.success(f"""
-    **Evidence-Based Recommendations:**
+    **Evidence-Based Recommendations (Berry Street Framework):**
     
-    **1. Proactive (Prevention):** Check-in before "{top_ant}", regulated start before {top_session}, environmental modification in {top_loc}
+    **1. Body Domain (Regulation):** Regulated start before {top_session}, breathing exercises, movement breaks, sensory check-ins in {top_loc}, zones of regulation
     
-    **2. In-the-Moment (CPI):** Supportive stance, low voice, reduce audience, offer choices, acknowledge feelings
+    **2. Relationship Domain (Connection):** Key adult check-in before "{top_ant}", relationship-building activities, acknowledgment of feelings, co-regulation strategies
     
-    **3. Teaching (Replacement Skills):** Link to Personal & Social Capability, teach help-seeking, practice requesting breaks, emotional literacy
+    **3. Stamina Domain (Persistence):** Link to Personal & Social Capability, teach help-seeking, practice requesting breaks, build coping strategies
     
-    **4. SMART Goal:** Over 5 weeks, use help-seeking strategy in 4/5 opportunities with support. Review {(datetime.now() + timedelta(weeks=5)).strftime('%d/%m/%Y')}.
+    **4. SMART Goal:** Over 5 weeks, use help-seeking strategy in 4/5 opportunities with support (supports Body and Relationship). Review {(datetime.now() + timedelta(weeks=5)).strftime('%d/%m/%Y')}.
     """)
     
     st.markdown("---")
     
-    # EXPORT
+    # EXPORT with Berry Street branding
     st.markdown("### 📄 Export Data & Reports")
-    st.caption("Professional reports prepared by Learning and Behaviour Unit")
+    st.caption("Professional reports prepared by Learning and Behaviour Unit using Berry Street Education Model")
     
     col1, col2 = st.columns(2)
     
@@ -1383,17 +1337,21 @@ def render_student_analysis_page():
         )
     
     with col2:
-        docx_file = generate_behaviour_analysis_plan_docx(
-            student, full_df, top_ant, top_beh, top_loc, top_session, risk_score, risk_level
-        )
+        with st.spinner("Generating Behaviour Analysis Plan with graphs..."):
+            docx_file = generate_behaviour_analysis_plan_docx(
+                student, full_df, top_ant, top_beh, top_loc, top_session, risk_score, risk_level
+            )
         if docx_file:
             st.download_button(
-                "📄 Behaviour Analysis Plan (Word)",
+                "📄 Behaviour Analysis Plan (Word with Graphs)",
                 docx_file,
                 file_name=f"BAP_{student['name'].replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                use_container_width=True
+                use_container_width=True,
+                help="Professional report with 6 embedded graphs, Berry Street framework, and evidence-based recommendations"
             )
+        else:
+            st.error("Unable to generate BAP. Please ensure kaleido is installed.")
     
     st.markdown("---")
     
