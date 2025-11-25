@@ -7,6 +7,34 @@ import uuid
 import random
 from io import BytesIO
 import base64
+import bcrypt
+
+# SUPABASE CONNECTION
+try:
+    from supabase import create_client, Client
+    SUPABASE_AVAILABLE = True
+except ImportError:
+    SUPABASE_AVAILABLE = False
+    st.warning("⚠️ Supabase not installed. Run: pip install supabase")
+
+# Initialize Supabase client
+@st.cache_resource
+def init_supabase() -> Client:
+    """Initialize Supabase client with credentials from secrets"""
+    if not SUPABASE_AVAILABLE:
+        return None
+    
+    try:
+        url = st.secrets["supabase"]["url"]
+        key = st.secrets["supabase"]["key"]
+        return create_client(url, key)
+    except Exception as e:
+        st.error(f"❌ Supabase connection failed: {e}")
+        st.info("💡 Add Supabase credentials to .streamlit/secrets.toml")
+        return None
+
+# Global Supabase client
+supabase: Client = init_supabase()
 
 st.set_page_config(page_title="CLC Behaviour Support", page_icon="📊", layout="wide", initial_sidebar_state="collapsed")
 
@@ -57,17 +85,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("""
-<div style='background: white; padding: 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); border-left: 4px solid #0ea5e9;'>
-    <div style='color: #0f172a; font-weight: 700; font-size: 1.125rem; margin-bottom: 0.25rem;'>
-        🎭 SANDBOX MODE
-    </div>
-    <div style='color: #64748b; font-size: 0.875rem; font-weight: 500;'>
-        This demonstration uses synthetic data only. No real student information is included.
-    </div>
-</div>
-""", unsafe_allow_html=True)
+# Production mode - sandbox banner removed
 
 # MOCK DATA
 MOCK_STAFF = [
@@ -893,15 +911,309 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
         return None
 
 
+# ============================================
+# SUPABASE DATABASE FUNCTIONS
+# ============================================
+
+def hash_password(plain_password: str) -> str:
+    """Hash a password using bcrypt"""
+    salt = bcrypt.gensalt(rounds=12)
+    hashed = bcrypt.hashpw(plain_password.encode('utf-8'), salt)
+    return hashed.decode('utf-8')
+
+def load_students_from_db():
+    """Load students from Supabase database"""
+    if not supabase:
+        return MOCK_STUDENTS  # Fallback to mock data
+    
+    try:
+        response = supabase.table('students').select('*').execute()
+        students = []
+        for row in response.data:
+            students.append({
+                "id": str(row['id']),
+                "name": row['name'],
+                "edid": row['edid'],
+                "grade": row['grade'],
+                "dob": row['dob'],
+                "program": row['program'],
+                "placement_start": row['placement_start'],
+                "placement_end": row['placement_end']
+            })
+        return students  # Return empty list if no students in database
+    except Exception as e:
+        st.error(f"Error loading students: {e}")
+        return []  # Return empty list on error
+
+def save_student_to_db(student):
+    """Save a student to Supabase database"""
+    if not supabase:
+        return False
+    
+    try:
+        data = {
+            "name": student['name'],
+            "edid": student['edid'],
+            "grade": student['grade'],
+            "dob": student['dob'],
+            "program": student['program'],
+            "placement_start": student['placement_start'],
+            "placement_end": student.get('placement_end')
+        }
+        
+        if 'id' in student and student['id'].startswith('stu_'):
+            # New student (generated ID from app)
+            supabase.table('students').insert(data).execute()
+        else:
+            # Existing student (UUID from database)
+            supabase.table('students').update(data).eq('id', student['id']).execute()
+        return True
+    except Exception as e:
+        st.error(f"Error saving student: {e}")
+        return False
+
+def delete_student_from_db(student_id):
+    """Delete a student from Supabase database"""
+    if not supabase:
+        return False
+    
+    try:
+        supabase.table('students').delete().eq('id', student_id).execute()
+        return True
+    except Exception as e:
+        st.error(f"Error deleting student: {e}")
+        return False
+
+def load_staff_from_db():
+    """Load staff from Supabase database"""
+    if not supabase:
+        return MOCK_STAFF
+    
+    try:
+        response = supabase.table('staff').select('*').execute()
+        staff = []
+        for row in response.data:
+            staff.append({
+                "id": str(row['id']),
+                "name": row['name'],
+                "email": row['email'],
+                "password": row.get('password'),  # Keep for backward compatibility
+                "password_hash": row.get('password_hash', row.get('password')),  # Use password_hash if available
+                "role": row['role'],
+                "program": row.get('program'),
+                "phone": row.get('phone'),
+                "notes": row.get('notes'),
+                "receive_critical_emails": row.get('receive_critical_emails', True),
+                "created_date": row.get('created_at', '')[:10] if row.get('created_at') else None
+            })
+        return staff  # Return what we have from database
+    except Exception as e:
+        st.error(f"Error loading staff: {e}")
+        return []  # Return empty list on error
+
+def save_staff_to_db(staff_member):
+    """Save a staff member to Supabase database"""
+    if not supabase:
+        return False
+    
+    try:
+        data = {
+            "name": staff_member['name'],
+            "email": staff_member['email'],
+            "password": staff_member['password'],
+            "role": staff_member['role'],
+            "program": staff_member.get('program'),
+            "phone": staff_member.get('phone'),
+            "notes": staff_member.get('notes'),
+            "receive_critical_emails": staff_member.get('receive_critical_emails', True)
+        }
+        
+        if 'id' in staff_member and staff_member['id'].startswith('staff_'):
+            # New staff (generated ID from app)
+            supabase.table('staff').insert(data).execute()
+        else:
+            # Existing staff (UUID from database)
+            supabase.table('staff').update(data).eq('id', staff_member['id']).execute()
+        return True
+    except Exception as e:
+        st.error(f"Error saving staff: {e}")
+        return False
+
+def delete_staff_from_db(staff_id):
+    """Delete a staff member from Supabase database"""
+    if not supabase:
+        return False
+    
+    try:
+        supabase.table('staff').delete().eq('id', staff_id).execute()
+        return True
+    except Exception as e:
+        st.error(f"Error deleting staff: {e}")
+        return False
+
+def load_incidents_from_db(student_id=None):
+    """Load incidents from Supabase database"""
+    if not supabase:
+        return []
+    
+    try:
+        query = supabase.table('incidents').select('*')
+        if student_id:
+            query = query.eq('student_id', student_id)
+        response = query.execute()
+        
+        incidents = []
+        for row in response.data:
+            incidents.append({
+                "id": str(row['id']),
+                "student_id": str(row['student_id']),
+                "date": row['date'],
+                "time": row['time'],
+                "day": row['day_of_week'],
+                "session": row['session'],
+                "location": row['location'],
+                "behaviour_type": row['behaviour_type'],
+                "antecedent": row['antecedent'],
+                "intervention": row['intervention'],  # Already array in DB
+                "severity": row['severity'],
+                "reported_by": str(row['reported_by']) if row.get('reported_by') else None,
+                "description": row.get('description', ''),
+                "duration_minutes": row.get('duration_minutes'),
+                "hypothesis_function": row.get('hypothesis_function'),
+                "hypothesis_item": row.get('hypothesis_item'),
+                "is_critical": row.get('is_critical', False)
+            })
+        return incidents
+    except Exception as e:
+        st.error(f"Error loading incidents: {e}")
+        return []
+
+def save_incident_to_db(incident):
+    """Save an incident to Supabase database"""
+    if not supabase:
+        return False
+    
+    try:
+        data = {
+            "student_id": incident['student_id'],
+            "date": incident['date'],
+            "time": incident['time'],
+            "day_of_week": incident['day'],
+            "session": incident['session'],
+            "location": incident['location'],
+            "behaviour_type": incident['behaviour_type'],
+            "antecedent": incident['antecedent'],
+            "intervention": incident['intervention'],
+            "severity": incident['severity'],
+            "reported_by": incident.get('reported_by'),
+            "description": incident.get('description', ''),
+            "duration_minutes": incident.get('duration_minutes'),
+            "hypothesis_function": incident.get('hypothesis_function'),
+            "hypothesis_item": incident.get('hypothesis_item'),
+            "is_critical": incident.get('is_critical', False)
+        }
+        
+        if 'id' not in incident or not incident['id']:
+            # New incident
+            supabase.table('incidents').insert(data).execute()
+        else:
+            # Update existing
+            supabase.table('incidents').update(data).eq('id', incident['id']).execute()
+        return True
+    except Exception as e:
+        st.error(f"Error saving incident: {e}")
+        return False
+
+def load_critical_incidents_from_db(student_id=None):
+    """Load critical incidents from Supabase database"""
+    if not supabase:
+        return []
+    
+    try:
+        query = supabase.table('critical_incidents').select('*')
+        if student_id:
+            query = query.eq('student_id', student_id)
+        response = query.execute()
+        
+        critical = []
+        for row in response.data:
+            critical.append({
+                "id": str(row['id']),
+                "student_id": str(row['student_id']),
+                "severity": row['severity'],
+                "reported_by": str(row['reported_by']) if row.get('reported_by') else None,
+                "ABCH_primary": {
+                    "location": row['primary_location'],
+                    "context": row['primary_context'],
+                    "time": row['primary_time'],
+                    "behaviour": row['primary_behaviour'],
+                    "consequence": row['primary_consequence'],
+                    "hypothesis_function": row.get('primary_hypothesis_function'),
+                    "hypothesis_item": row.get('primary_hypothesis_item')
+                },
+                "ABCH_additional": row.get('additional_entries', []),
+                "outcomes": row['outcomes'],
+                "sapol_reference": row.get('sapol_reference'),
+                "admin_summary": row.get('admin_summary'),
+                "created_at": row.get('created_at')
+            })
+        return critical
+    except Exception as e:
+        st.error(f"Error loading critical incidents: {e}")
+        return []
+
+def save_critical_incident_to_db(critical):
+    """Save a critical incident to Supabase database"""
+    if not supabase:
+        return False
+    
+    try:
+        primary = critical.get('ABCH_primary', {})
+        data = {
+            "student_id": critical['student_id'],
+            "severity": critical['severity'],
+            "reported_by": critical.get('reported_by'),
+            "primary_location": primary.get('location', ''),
+            "primary_context": primary.get('context', ''),
+            "primary_time": primary.get('time', ''),
+            "primary_behaviour": primary.get('behaviour', ''),
+            "primary_consequence": primary.get('consequence', ''),
+            "primary_hypothesis_function": primary.get('hypothesis_function'),
+            "primary_hypothesis_item": primary.get('hypothesis_item'),
+            "additional_entries": critical.get('ABCH_additional', []),
+            "outcomes": critical.get('outcomes', []),
+            "sapol_reference": critical.get('sapol_reference'),
+            "admin_summary": critical.get('admin_summary')
+        }
+        
+        if 'id' not in critical or not critical['id']:
+            # New critical incident
+            supabase.table('critical_incidents').insert(data).execute()
+        else:
+            # Update existing
+            supabase.table('critical_incidents').update(data).eq('id', critical['id']).execute()
+        return True
+    except Exception as e:
+        st.error(f"Error saving critical incident: {e}")
+        return False
+
+
 def init_state():
     ss = st.session_state
     if "logged_in" not in ss: ss.logged_in = False
     if "current_user" not in ss: ss.current_user = None
     if "current_page" not in ss: ss.current_page = "login"
-    if "students" not in ss: ss.students = MOCK_STUDENTS
-    if "staff" not in ss: ss.staff = MOCK_STAFF
-    if "incidents" not in ss: ss.incidents = generate_mock_incidents(70)
-    if "critical_incidents" not in ss: ss.critical_incidents = []
+    
+    # Load from Supabase if available, otherwise use mock data
+    if "students" not in ss: 
+        ss.students = load_students_from_db() if supabase else MOCK_STUDENTS
+    if "staff" not in ss: 
+        ss.staff = load_staff_from_db() if supabase else MOCK_STAFF
+    if "incidents" not in ss: 
+        ss.incidents = load_incidents_from_db() if supabase else generate_mock_incidents(70)
+    if "critical_incidents" not in ss: 
+        ss.critical_incidents = load_critical_incidents_from_db() if supabase else []
+    
     if "selected_program" not in ss: ss.selected_program = "JP"
     if "selected_student_id" not in ss: ss.selected_student_id = None
     if "current_incident_id" not in ss: ss.current_incident_id = None
@@ -909,15 +1221,41 @@ def init_state():
     if "show_critical_prompt" not in ss: ss.show_critical_prompt = False
 
 def login_user(email: str, password: str) -> bool:
+    """Login user with bcrypt password verification"""
     email = (email or "").strip().lower()
     password = (password or "").strip()
-    if not email or not password: return False
+    if not email or not password: 
+        return False
+    
     for staff in st.session_state.staff:
-        if staff.get("email", "").lower() == email and staff.get("password", "") == password:
-            st.session_state.logged_in = True
-            st.session_state.current_user = staff
-            st.session_state.current_page = "landing"
-            return True
+        if staff.get("email", "").lower() == email:
+            # Get the stored hash
+            stored_hash = staff.get("password_hash", "")
+            if not stored_hash:
+                continue
+            
+            # Verify password against bcrypt hash
+            try:
+                # Handle both string and bytes
+                if isinstance(stored_hash, str):
+                    stored_hash = stored_hash.encode('utf-8')
+                if isinstance(password, str):
+                    password_bytes = password.encode('utf-8')
+                
+                if bcrypt.checkpw(password_bytes, stored_hash):
+                    st.session_state.logged_in = True
+                    st.session_state.current_user = staff
+                    st.session_state.current_page = "landing"
+                    return True
+            except Exception as e:
+                # If bcrypt fails, try plain text comparison as fallback (for migration)
+                if staff.get("password") == password:
+                    st.session_state.logged_in = True
+                    st.session_state.current_user = staff
+                    st.session_state.current_page = "landing"
+                    return True
+                continue
+    
     return False
 
 def go_to(page: str, **kwargs):
@@ -960,9 +1298,6 @@ def generate_mock_incidents(n=70):
 # PAGES
 def render_login_page():
     st.markdown("## 🔐 Staff Login")
-    with st.container(border=True):
-        st.markdown("**Demo Credentials:**")
-        st.code("Email: emily.jones@example.com\nPassword: demo123")
     email = st.text_input("Email Address", placeholder="your.email@example.com", key="login_email")
     password = st.text_input("Password", type="password", placeholder="Enter password", key="login_pass")
     if st.button("Login", type="primary", use_container_width=True):
@@ -2233,3 +2568,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
