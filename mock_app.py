@@ -15,7 +15,7 @@ try:
     SUPABASE_AVAILABLE = True
 except ImportError:
     SUPABASE_AVAILABLE = False
-    st.warning(⚠️ Supabase not installed. Run: pip install supabase")
+    st.warning("Supabase not installed. Run: pip install supabase")
 
 # Initialize Supabase client
 @st.cache_resource
@@ -36,7 +36,7 @@ def init_supabase() -> Client:
 # Global Supabase client
 supabase: Client = init_supabase()
 
-st.set_page_config(page_title="CLC Behaviour Support", page_icon="📊", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="CLC Behaviour Support - DEMO", page_icon="📊", layout="wide", initial_sidebar_state="collapsed")
 
 # MINIMALIST PROFESSIONAL STYLING
 st.markdown("""
@@ -89,31 +89,37 @@ st.markdown("""
 
 # MOCK DATA
 MOCK_STAFF = [
-    {"id": "s1", "name": "Emily Jones", "role": "JP", "email": "emily.jones@example.com", "password": "demo123"},
-    {"id": "s2", "name": "Daniel Lee", "role": "PY", "email": "daniel.lee@example.com", "password": "demo123"},
-    {"id": "s3", "name": "Sarah Chen", "role": "SY", "email": "sarah.chen@example.com", "password": "demo123"},
-    {"id": "s4", "name": "Admin User", "role": "ADM", "email": "admin@example.com", "password": "admin123"},
+    {"id": "s1", "first_name": "Emily", "last_name": "Jones", "name": "Emily Jones", "role": "TSS", "program": "JP", "email": "emily.jones@example.com", "password": "demo123"},
+    {"id": "s2", "first_name": "Daniel", "last_name": "Lee", "name": "Daniel Lee", "role": "TSS", "program": "PY", "email": "daniel.lee@example.com", "password": "demo123"},
+    {"id": "s3", "first_name": "Sarah", "last_name": "Chen", "name": "Sarah Chen", "role": "TSS", "program": "SY", "email": "sarah.chen@example.com", "password": "demo123"},
+    {"id": "s4", "first_name": "Admin", "last_name": "User", "name": "Admin User", "role": "ADM", "email": "admin@example.com", "password": "admin123"},
+    {"id": "s5", "first_name": "Michael", "last_name": "Roberts", "name": "Michael Roberts", "role": "Leader", "program": "JP", "email": "michael.roberts@example.com", "password": "demo123"},
+    {"id": "s6", "first_name": "Jennifer", "last_name": "Walsh", "name": "Jennifer Walsh", "role": "Leader", "program": "PY", "email": "jennifer.walsh@example.com", "password": "demo123"},
 ]
 
+# Demo students - 2 per program (6 total)
 MOCK_STUDENTS = [
-    {"id": "stu_jp1", "name": "Emma T.", "grade": "R", "dob": "2018-05-30", "program": "JP", 
+    # Junior Primary (JP) - 2 students
+    {"id": "stu_jp1", "first_name": "Emma", "last_name": "Thompson", "name": "Emma Thompson", 
+     "grade": "R", "dob": "2018-05-30", "program": "JP", 
      "edid": "ED123456", "placement_start": "2024-02-01", "placement_end": None},
-    {"id": "stu_jp2", "name": "Oliver S.", "grade": "Y1", "dob": "2017-09-12", "program": "JP",
+    {"id": "stu_jp2", "first_name": "Oliver", "last_name": "Smith", "name": "Oliver Smith", 
+     "grade": "Y1", "dob": "2017-09-12", "program": "JP",
      "edid": "ED234567", "placement_start": "2024-03-15", "placement_end": None},
-    {"id": "stu_jp3", "name": "Sophie M.", "grade": "Y2", "dob": "2016-03-20", "program": "JP",
-     "edid": "ED345678", "placement_start": "2024-01-29", "placement_end": None},
-    {"id": "stu_py1", "name": "Liam C.", "grade": "Y3", "dob": "2015-06-15", "program": "PY",
+    # Primary Years (PY) - 2 students
+    {"id": "stu_py1", "first_name": "Liam", "last_name": "Carter", "name": "Liam Carter", 
+     "grade": "Y3", "dob": "2015-06-15", "program": "PY",
      "edid": "ED456789", "placement_start": "2024-02-12", "placement_end": None},
-    {"id": "stu_py2", "name": "Ava R.", "grade": "Y4", "dob": "2014-11-08", "program": "PY",
+    {"id": "stu_py2", "first_name": "Ava", "last_name": "Robinson", "name": "Ava Robinson", 
+     "grade": "Y5", "dob": "2013-11-08", "program": "PY",
      "edid": "ED567890", "placement_start": "2024-01-08", "placement_end": None},
-    {"id": "stu_py3", "name": "Noah B.", "grade": "Y6", "dob": "2012-02-28", "program": "PY",
-     "edid": "ED678901", "placement_start": "2024-04-03", "placement_end": None},
-    {"id": "stu_sy1", "name": "Isabella G.", "grade": "Y7", "dob": "2011-04-17", "program": "SY",
+    # Senior Years (SY) - 2 students
+    {"id": "stu_sy1", "first_name": "Isabella", "last_name": "Garcia", "name": "Isabella Garcia", 
+     "grade": "Y7", "dob": "2011-04-17", "program": "SY",
      "edid": "ED789012", "placement_start": "2024-01-29", "placement_end": None},
-    {"id": "stu_sy2", "name": "Ethan D.", "grade": "Y9", "dob": "2009-12-03", "program": "SY",
+    {"id": "stu_sy2", "first_name": "Ethan", "last_name": "Davis", "name": "Ethan Davis", 
+     "grade": "Y9", "dob": "2009-12-03", "program": "SY",
      "edid": "ED890123", "placement_start": "2024-02-26", "placement_end": None},
-    {"id": "stu_sy3", "name": "Mia A.", "grade": "Y11", "dob": "2007-08-20", "program": "SY",
-     "edid": "ED901234", "placement_start": "2024-03-11", "placement_end": None},
 ]
 
 PROGRAM_NAMES = {"JP": "Junior Primary", "PY": "Primary Years", "SY": "Senior Years"}
@@ -1567,20 +1573,21 @@ def save_critical_incident_to_db(critical):
 
 
 def init_state():
+    """Initialize session state with DEMO DATA - This is the demo version"""
     ss = st.session_state
     if "logged_in" not in ss: ss.logged_in = False
     if "current_user" not in ss: ss.current_user = None
     if "current_page" not in ss: ss.current_page = "login"
     
-    # Load from Supabase if available, otherwise use mock data
+    # DEMO VERSION: Always use mock data for demonstration purposes
     if "students" not in ss: 
-        ss.students = load_students_from_db() if supabase else MOCK_STUDENTS
+        ss.students = MOCK_STUDENTS.copy()
     if "staff" not in ss: 
-        ss.staff = load_staff_from_db() if supabase else MOCK_STAFF
+        ss.staff = MOCK_STAFF.copy()
     if "incidents" not in ss: 
-        ss.incidents = load_incidents_from_db() if supabase else generate_mock_incidents(70)
+        ss.incidents = generate_demo_incidents()
     if "critical_incidents" not in ss: 
-        ss.critical_incidents = load_critical_incidents_from_db() if supabase else []
+        ss.critical_incidents = generate_demo_critical_incidents()
     
     if "selected_program" not in ss: ss.selected_program = "JP"
     if "selected_student_id" not in ss: ss.selected_student_id = None
@@ -1589,77 +1596,42 @@ def init_state():
     if "show_critical_prompt" not in ss: ss.show_critical_prompt = False
 
 def login_user(email: str, password: str) -> bool:
-    """Login user with bcrypt password verification"""
+    """Login user - Demo version uses plain password matching"""
     email = (email or "").strip().lower()
     password = (password or "").strip()
     
-    st.write(f"🔍 DEBUG: Attempting login with email: '{email}'")
-    st.write(f"🔍 DEBUG: Password length: {len(password)}")
-    st.write(f"🔍 DEBUG: Total staff in memory: {len(st.session_state.staff)}")
-    
     if not email or not password:
-        st.write("❌ DEBUG: Email or password empty")
         return False
     
-    for idx, staff in enumerate(st.session_state.staff):
+    for staff in st.session_state.staff:
         staff_email = staff.get("email", "").lower()
-        st.write(f"🔍 DEBUG: Checking staff #{idx}: {staff_email}")
         
         if staff_email == email:
-            st.write(f"✅ DEBUG: Email match found!")
-            st.write(f"🔍 DEBUG: Staff has password field: {staff.get('password')}")
-            st.write(f"🔍 DEBUG: Staff has password_hash field: {staff.get('password_hash', '')[:30]}...")
+            # Demo version: Use plain password matching
+            if staff.get("password") == password:
+                st.session_state.logged_in = True
+                st.session_state.current_user = staff
+                st.session_state.current_page = "landing"
+                return True
             
-            # Get the stored hash
+            # Also try bcrypt if available
             stored_hash = staff.get("password_hash", "")
-            if not stored_hash:
-                st.write("⚠️ DEBUG: No password_hash found, trying plain password")
-                if staff.get("password") == password:
-                    st.write("✅ DEBUG: Plain password match!")
-                    st.session_state.logged_in = True
-                    st.session_state.current_user = staff
-                    st.session_state.current_page = "landing"
-                    return True
-                else:
-                    st.write(f"❌ DEBUG: Plain password mismatch. Expected: '{staff.get('password')}', Got: '{password}'")
-                    continue
-            
-            # Verify password against bcrypt hash
-            try:
-                if isinstance(stored_hash, str):
-                    stored_hash_bytes = stored_hash.encode('utf-8')
-                else:
-                    stored_hash_bytes = stored_hash
+            if stored_hash:
+                try:
+                    if isinstance(stored_hash, str):
+                        stored_hash_bytes = stored_hash.encode('utf-8')
+                    else:
+                        stored_hash_bytes = stored_hash
+                    password_bytes = password.encode('utf-8')
                     
-                password_bytes = password.encode('utf-8')
-                
-                st.write(f"🔍 DEBUG: Attempting bcrypt verification...")
-                if bcrypt.checkpw(password_bytes, stored_hash_bytes):
-                    st.write("✅ DEBUG: Bcrypt verification SUCCESS!")
-                    st.session_state.logged_in = True
-                    st.session_state.current_user = staff
-                    st.session_state.current_page = "landing"
-                    return True
-                else:
-                    st.write("❌ DEBUG: Bcrypt verification FAILED")
-                    if staff.get("password") == password:
-                        st.write("✅ DEBUG: Using plain password fallback - LOGIN SUCCESS!")
+                    if bcrypt.checkpw(password_bytes, stored_hash_bytes):
                         st.session_state.logged_in = True
                         st.session_state.current_user = staff
                         st.session_state.current_page = "landing"
                         return True
-                    else:
-                        st.write(f"❌ DEBUG: Plain password mismatch")
-            except Exception as e:
-                st.write(f"⚠️ DEBUG: Bcrypt error: {e}")
-                if staff.get("password") == password:
-                    st.write("✅ DEBUG: Plain password fallback after exception - LOGIN SUCCESS!")
-                    st.session_state.logged_in = True
-                    st.session_state.current_user = staff
-                    st.session_state.current_page = "landing"
-                    return True
+                except Exception:
+                    pass
     
-    st.write("❌ DEBUG: No matching staff found")
     return False
 def go_to(page: str, **kwargs):
     if page not in VALID_PAGES: return
@@ -1674,33 +1646,347 @@ def get_student(sid):
 def get_session_from_time(t): 
     return "Morning" if t.hour < 11 else "Middle" if t.hour < 13 else "Afternoon"
 
-def generate_mock_incidents(n=70):
+def generate_demo_incidents():
+    """Generate comprehensive demo incidents - 5-8 per student with realistic patterns"""
     incidents = []
-    weights = {"stu_sy1": 12, "stu_py1": 10, "stu_sy2": 9, "stu_jp1": 8, "stu_py2": 7}
-    pool = []
-    for stu in MOCK_STUDENTS:
-        pool.extend([stu] * weights.get(stu["id"], 5))
-    for _ in range(n):
-        stu = random.choice(pool)
-        sev = random.choices([1, 2, 3, 4, 5], weights=[20, 35, 25, 15, 5])[0]
-        dt = datetime.now() - timedelta(days=random.randint(0, 90))
-        dt = dt.replace(hour=random.choices([9,10,11,12,13,14,15], weights=[10,15,12,8,12,18,10])[0], 
-                       minute=random.randint(0,59), second=0)
-        incidents.append({
-            "id": str(uuid.uuid4()), "student_id": stu["id"], "student_name": stu["name"],
-            "date": dt.date().isoformat(), "time": dt.time().strftime("%H:%M:%S"),
-            "day": dt.strftime("%A"), "session": get_session_from_time(dt.time()),
-            "location": random.choice(LOCATIONS), "behaviour_type": random.choice(BEHAVIOUR_TYPES),
-            "antecedent": random.choice(ANTECEDENTS), 
-            "intervention": [random.choice(INTERVENTIONS)],  # Changed to list
-            "severity": sev, "reported_by": random.choice(MOCK_STAFF)["name"],
-            "description": "Mock incident", "is_critical": sev >= 3, "duration_minutes": random.randint(2, 25)
+    
+    # Define realistic incident patterns for each student
+    student_patterns = {
+        "stu_jp1": {  # Emma Thompson - R - escape/avoidance focused
+            "primary_behaviours": ["Verbal Refusal", "Elopement"],
+            "primary_antecedents": ["Demand - literacy tasks", "Transition - to a non-preferred activity"],
+            "primary_locations": ["Classroom", "Learning Space"],
+            "hypothesis_function": "Escape/Avoidance",
+            "hypothesis_item": "non-preferred literacy demands",
+            "incident_count": 7
+        },
+        "stu_jp2": {  # Oliver Smith - Y1 - attention seeking
+            "primary_behaviours": ["Verbal Aggression", "Property Destruction"],
+            "primary_antecedents": ["Attention - staff diverted to another student", "Peer - peer conflict/interaction"],
+            "primary_locations": ["Classroom", "Playground"],
+            "hypothesis_function": "Access to Attention",
+            "hypothesis_item": "staff attention when feeling ignored",
+            "incident_count": 6
+        },
+        "stu_py1": {  # Liam Carter - Y3 - escape focused
+            "primary_behaviours": ["Elopement", "Verbal Refusal", "Aggression (Adult)"],
+            "primary_antecedents": ["Demand - maths tasks", "Demand - completing a task independently"],
+            "primary_locations": ["Classroom", "Learning Space", "Withdrawal Room"],
+            "hypothesis_function": "Escape/Avoidance",
+            "hypothesis_item": "challenging academic demands",
+            "incident_count": 8
+        },
+        "stu_py2": {  # Ava Robinson - Y5 - sensory/tangible
+            "primary_behaviours": ["Verbal Refusal", "Property Destruction"],
+            "primary_antecedents": ["Sensory - environment too noisy/busy", "Tangible - denied access to preferred item"],
+            "primary_locations": ["Classroom", "Hall/Assembly Area"],
+            "hypothesis_function": "Access to Tangible",
+            "hypothesis_item": "preferred items or sensory regulation",
+            "incident_count": 5
+        },
+        "stu_sy1": {  # Isabella Garcia - Y7 - peer conflict focused
+            "primary_behaviours": ["Verbal Aggression", "Aggression (Peer)", "Elopement"],
+            "primary_antecedents": ["Peer - peer conflict/interaction", "Peer - negative peer feedback"],
+            "primary_locations": ["Classroom", "Playground", "Corridors"],
+            "hypothesis_function": "Escape/Avoidance",
+            "hypothesis_item": "negative peer interactions",
+            "incident_count": 7
+        },
+        "stu_sy2": {  # Ethan Davis - Y9 - escape/control focused
+            "primary_behaviours": ["Verbal Refusal", "Verbal Aggression", "Property Destruction"],
+            "primary_antecedents": ["Demand - given an instruction by staff", "Internal - ruminating on past events"],
+            "primary_locations": ["Classroom", "Learning Space", "Outdoors"],
+            "hypothesis_function": "Escape/Avoidance",
+            "hypothesis_item": "adult-directed demands",
+            "incident_count": 6
+        }
+    }
+    
+    # Generate incidents for each student
+    for student_id, pattern in student_patterns.items():
+        student = next((s for s in MOCK_STUDENTS if s["id"] == student_id), None)
+        if not student:
+            continue
+            
+        for i in range(pattern["incident_count"]):
+            # Vary dates over past 60 days
+            days_ago = random.randint(1, 60)
+            dt = datetime.now() - timedelta(days=days_ago)
+            
+            # Vary times throughout school day
+            hour = random.choices([9, 10, 11, 12, 13, 14, 15], weights=[12, 18, 15, 10, 12, 18, 15])[0]
+            dt = dt.replace(hour=hour, minute=random.randint(0, 59), second=0)
+            
+            # Use pattern-based selections with some variation
+            if random.random() < 0.7:  # 70% follow pattern
+                behaviour = random.choice(pattern["primary_behaviours"])
+                antecedent = random.choice(pattern["primary_antecedents"])
+                location = random.choice(pattern["primary_locations"])
+            else:  # 30% random for variation
+                behaviour = random.choice(BEHAVIOUR_TYPES)
+                antecedent = random.choice([a for a in ANTECEDENTS if not a.startswith("---")])
+                location = random.choice(LOCATIONS)
+            
+            # Severity distribution - ensure some are critical (3+)
+            if i < 2:  # First 2 incidents per student are critical
+                severity = random.choice([3, 4])
+            else:
+                severity = random.choices([1, 2, 3, 4], weights=[25, 40, 25, 10])[0]
+            
+            is_critical = severity >= 3
+            
+            incidents.append({
+                "id": str(uuid.uuid4()),
+                "student_id": student_id,
+                "student_name": student["name"],
+                "date": dt.date().isoformat(),
+                "time": dt.time().strftime("%H:%M:%S"),
+                "day": dt.strftime("%A"),
+                "session": get_session_from_time(dt.time()),
+                "location": location,
+                "behaviour_type": behaviour,
+                "antecedent": antecedent,
+                "intervention": random.sample(INTERVENTIONS, k=random.randint(1, 3)),
+                "severity": severity,
+                "reported_by": random.choice(MOCK_STAFF)["id"],
+                "description": f"Demo incident for {student['name']}",
+                "is_critical": is_critical,
+                "duration_minutes": random.randint(3, 20),
+                "hypothesis_function": pattern["hypothesis_function"],
+                "hypothesis_item": pattern["hypothesis_item"]
+            })
+    
+    return sorted(incidents, key=lambda x: x["date"], reverse=True)
+
+def generate_demo_critical_incidents():
+    """Generate demo critical incident records with full ABCH data"""
+    critical_incidents = []
+    
+    # Create 2-3 critical incidents per student
+    critical_data = [
+        # Emma Thompson - JP
+        {
+            "student_id": "stu_jp1",
+            "ABCH_primary": {
+                "location": "Classroom",
+                "context": "Asked to complete writing task, became overwhelmed",
+                "time": "09:30 AM",
+                "behaviour": "Threw chair, screamed, ran out of classroom",
+                "consequence": "Room cleared, student followed at safe distance",
+                "hypothesis": "Escape/Avoidance - overwhelming literacy demand"
+            },
+            "intended_outcomes": ["Access to Tangible", "Escape/Avoidance"],
+            "severity": 4
+        },
+        {
+            "student_id": "stu_jp1",
+            "ABCH_primary": {
+                "location": "Learning Space",
+                "context": "Transition from play to structured activity",
+                "time": "11:15 AM",
+                "behaviour": "Pushed staff member, kicked furniture",
+                "consequence": "Space cleared, calm voice used, waited for regulation",
+                "hypothesis": "Escape/Avoidance - transition difficulty"
+            },
+            "intended_outcomes": ["Escape/Avoidance"],
+            "severity": 3
+        },
+        # Oliver Smith - JP
+        {
+            "student_id": "stu_jp2",
+            "ABCH_primary": {
+                "location": "Playground",
+                "context": "Staff helping another student, Oliver wanted attention",
+                "time": "01:30 PM",
+                "behaviour": "Threw rocks at peers, verbal threats",
+                "consequence": "Immediate intervention, removed from area",
+                "hypothesis": "Access to Attention - feeling overlooked"
+            },
+            "intended_outcomes": ["Access to Attention"],
+            "severity": 4
+        },
+        {
+            "student_id": "stu_jp2",
+            "ABCH_primary": {
+                "location": "Classroom",
+                "context": "Group activity, not chosen as leader",
+                "time": "10:45 AM",
+                "behaviour": "Destroyed peer's work, verbal aggression",
+                "consequence": "Separated from group, 1:1 support provided",
+                "hypothesis": "Access to Attention - seeking recognition"
+            },
+            "intended_outcomes": ["Access to Attention", "Access to Tangible"],
+            "severity": 3
+        },
+        # Liam Carter - PY
+        {
+            "student_id": "stu_py1",
+            "ABCH_primary": {
+                "location": "Classroom",
+                "context": "Maths assessment, struggling with content",
+                "time": "09:45 AM",
+                "behaviour": "Flipped desk, attempted to leave building",
+                "consequence": "Building secured, leadership called",
+                "hypothesis": "Escape/Avoidance - academic frustration"
+            },
+            "intended_outcomes": ["Escape/Avoidance"],
+            "severity": 4
+        },
+        {
+            "student_id": "stu_py1",
+            "ABCH_primary": {
+                "location": "Withdrawal Room",
+                "context": "Asked to return to class after break",
+                "time": "02:00 PM",
+                "behaviour": "Punched wall, verbal abuse to staff",
+                "consequence": "Given space, parents contacted",
+                "hypothesis": "Escape/Avoidance - avoiding classroom return"
+            },
+            "intended_outcomes": ["Escape/Avoidance"],
+            "severity": 3
+        },
+        {
+            "student_id": "stu_py1",
+            "ABCH_primary": {
+                "location": "Learning Space",
+                "context": "Independent work task without support",
+                "time": "11:30 AM",
+                "behaviour": "Threw materials, grabbed staff arm",
+                "consequence": "CPI techniques used, incident documented",
+                "hypothesis": "Escape/Avoidance - feeling unsupported"
+            },
+            "intended_outcomes": ["Escape/Avoidance", "Access to Attention"],
+            "severity": 4
+        },
+        # Ava Robinson - PY
+        {
+            "student_id": "stu_py2",
+            "ABCH_primary": {
+                "location": "Hall/Assembly Area",
+                "context": "Whole school assembly, sensory overload",
+                "time": "09:15 AM",
+                "behaviour": "Screaming, attempted to run outside",
+                "consequence": "Escorted to quiet space, sensory tools provided",
+                "hypothesis": "Sensory regulation - overwhelmed by environment"
+            },
+            "intended_outcomes": ["Escape/Avoidance"],
+            "severity": 3
+        },
+        {
+            "student_id": "stu_py2",
+            "ABCH_primary": {
+                "location": "Classroom",
+                "context": "iPad taken away at end of allocated time",
+                "time": "02:30 PM",
+                "behaviour": "Threw iPad, hit staff member",
+                "consequence": "Room cleared, leadership notified",
+                "hypothesis": "Access to Tangible - denied preferred item"
+            },
+            "intended_outcomes": ["Access to Tangible"],
+            "severity": 4
+        },
+        # Isabella Garcia - SY
+        {
+            "student_id": "stu_sy1",
+            "ABCH_primary": {
+                "location": "Corridors",
+                "context": "Confrontation with peer about social media post",
+                "time": "12:45 PM",
+                "behaviour": "Physical altercation, verbal threats",
+                "consequence": "Students separated, parents contacted",
+                "hypothesis": "Escape/Avoidance - peer conflict escalation"
+            },
+            "intended_outcomes": ["Escape/Avoidance"],
+            "severity": 4
+        },
+        {
+            "student_id": "stu_sy1",
+            "ABCH_primary": {
+                "location": "Classroom",
+                "context": "Peer made negative comment about appearance",
+                "time": "10:00 AM",
+                "behaviour": "Left class, verbal aggression to peer",
+                "consequence": "Followed at distance, given space to regulate",
+                "hypothesis": "Escape/Avoidance - social rejection"
+            },
+            "intended_outcomes": ["Escape/Avoidance", "Access to Attention"],
+            "severity": 3
+        },
+        # Ethan Davis - SY
+        {
+            "student_id": "stu_sy2",
+            "ABCH_primary": {
+                "location": "Classroom",
+                "context": "Asked to put phone away multiple times",
+                "time": "09:30 AM",
+                "behaviour": "Verbal abuse to teacher, threw chair",
+                "consequence": "Room cleared, leadership intervention",
+                "hypothesis": "Escape/Avoidance - adult authority challenge"
+            },
+            "intended_outcomes": ["Escape/Avoidance", "Access to Tangible"],
+            "severity": 4
+        },
+        {
+            "student_id": "stu_sy2",
+            "ABCH_primary": {
+                "location": "Outdoors",
+                "context": "Ruminating about family issues, staff checked in",
+                "time": "01:15 PM",
+                "behaviour": "Punched fence, self-harm statements",
+                "consequence": "Wellbeing team notified, safety plan activated",
+                "hypothesis": "Internal regulation - emotional overwhelm"
+            },
+            "intended_outcomes": ["Escape/Avoidance"],
+            "severity": 4
+        },
+    ]
+    
+    for i, data in enumerate(critical_data):
+        student = next((s for s in MOCK_STUDENTS if s["id"] == data["student_id"]), None)
+        if not student:
+            continue
+            
+        days_ago = random.randint(5, 50)
+        created = datetime.now() - timedelta(days=days_ago)
+        
+        critical_incidents.append({
+            "id": str(uuid.uuid4()),
+            "student_id": data["student_id"],
+            "student_name": student["name"],
+            "ABCH_primary": data["ABCH_primary"],
+            "ABCH_continuation": [],
+            "intended_outcomes": data["intended_outcomes"],
+            "witnesses": ["Staff member present", "Other students in area"],
+            "injuries": "None reported" if data["severity"] < 4 else "Minor - no medical attention required",
+            "property_damage": "Minor" if random.random() > 0.5 else "None",
+            "police_contacted": False,
+            "police_reference": "",
+            "staff_completing": random.choice(MOCK_STAFF)["name"],
+            "created_at": created.isoformat(),
+            "severity": data["severity"]
         })
-    return incidents
+    
+    return critical_incidents
+
+def generate_mock_incidents(n=70):
+    """Legacy function - redirects to demo generator"""
+    return generate_demo_incidents()
 
 # PAGES
 def render_login_page():
     st.markdown("## 🔐 Staff Login")
+    
+    # DEMO CREDENTIALS INFO
+    st.info("""
+    🎭 **DEMO VERSION** - Use these credentials to explore:
+    
+    | Role | Email | Password |
+    |------|-------|----------|
+    | Admin | admin@example.com | admin123 |
+    | Staff (JP) | emily.jones@example.com | demo123 |
+    | Staff (PY) | daniel.lee@example.com | demo123 |
+    | Staff (SY) | sarah.chen@example.com | demo123 |
+    """)
 
     email = st.text_input("Email Address", placeholder="your.email@example.com", key="login_email")
     password = st.text_input("Password", type="password", placeholder="Enter password", key="login_pass")
@@ -1713,6 +1999,10 @@ def render_login_page():
 
 def render_landing_page():
     user = st.session_state.current_user or {}
+    
+    # DEMO BANNER
+    st.warning("🎭 **DEMO VERSION** - This app contains simulated data for demonstration purposes. All student names and incidents are fictional.")
+    
     st.markdown(f"### 👋 Welcome, {user.get('name', 'User')}")
     
     col1, col2 = st.columns([6, 1])
