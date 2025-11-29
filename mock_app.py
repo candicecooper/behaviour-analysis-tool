@@ -178,6 +178,213 @@ VALID_PAGES = ["login", "landing", "program_students", "incident_log", "critical
 HYPOTHESIS_FUNCTIONS = ["To get", "To avoid"]
 HYPOTHESIS_ITEMS = ["Tangible", "Activity", "Sensory", "Attention"]
 
+# AUSTRALIAN CURRICULUM GENERAL CAPABILITIES
+# These capabilities are developed across all learning areas
+AC_CAPABILITIES = {
+    "PSC": {
+        "name": "Personal and Social Capability",
+        "elements": {
+            "Self-awareness": ["Recognise emotions", "Recognise personal qualities and achievements", "Understand themselves as learners", "Develop reflective practice"],
+            "Self-management": ["Express emotions appropriately", "Develop self-discipline and set goals", "Work independently and show initiative", "Become confident, resilient and adaptable"],
+            "Social awareness": ["Appreciate diverse perspectives", "Contribute to civil society", "Understand relationships"],
+            "Social management": ["Communicate effectively", "Work collaboratively", "Make decisions", "Negotiate and resolve conflict", "Develop leadership skills"]
+        },
+        "color": "#4A90A4"
+    },
+    "CCT": {
+        "name": "Critical and Creative Thinking",
+        "elements": {
+            "Inquiring": ["Identify, explore and organise information and ideas", "Pose questions"],
+            "Generating": ["Generate ideas, possibilities and actions", "Consider alternatives"],
+            "Analysing": ["Analyse, synthesise and evaluate reasoning and procedures"],
+            "Reflecting": ["Reflect on thinking and processes", "Apply logic and reasoning"]
+        },
+        "color": "#6BB9A0"
+    },
+    "EU": {
+        "name": "Ethical Understanding",
+        "elements": {
+            "Understanding": ["Recognise ethical concepts", "Explore ethical issues"],
+            "Reasoning": ["Reason and make ethical decisions"],
+            "Acting": ["Consider consequences", "Reflect on ethical action"]
+        },
+        "color": "#E8B960"
+    },
+    "ICU": {
+        "name": "Intercultural Understanding",
+        "elements": {
+            "Recognising": ["Recognise culture and develop respect"],
+            "Interacting": ["Interact and empathise with others"],
+            "Reflecting": ["Reflect on intercultural experiences and take responsibility"]
+        },
+        "color": "#D4A574"
+    }
+}
+
+# Behaviour to AC Capability Mapping
+BEHAVIOUR_AC_MAPPING = {
+    "Verbal Refusal": {
+        "primary": "PSC",
+        "elements": ["Self-management", "Social management"],
+        "skills_to_develop": [
+            "Express emotions appropriately",
+            "Communicate effectively",
+            "Negotiate and resolve conflict"
+        ],
+        "ac_descriptors": [
+            "Persist in the face of difficulty",
+            "Express feelings and opinions appropriately",
+            "Work toward shared goals"
+        ]
+    },
+    "Elopement": {
+        "primary": "PSC",
+        "elements": ["Self-awareness", "Self-management"],
+        "skills_to_develop": [
+            "Recognise emotions",
+            "Develop self-discipline and set goals",
+            "Become confident, resilient and adaptable"
+        ],
+        "ac_descriptors": [
+            "Identify and express a range of emotions",
+            "Identify personal strengths and challenges",
+            "Persist when faced with challenges"
+        ]
+    },
+    "Property Destruction": {
+        "primary": "PSC",
+        "elements": ["Self-management", "Social awareness"],
+        "skills_to_develop": [
+            "Express emotions appropriately",
+            "Understand relationships",
+            "Appreciate diverse perspectives"
+        ],
+        "ac_descriptors": [
+            "Control impulses and reactions",
+            "Consider points of view of others",
+            "Identify the effects of actions on others"
+        ]
+    },
+    "Aggression (Peer)": {
+        "primary": "PSC",
+        "elements": ["Social management", "Social awareness"],
+        "skills_to_develop": [
+            "Negotiate and resolve conflict",
+            "Communicate effectively",
+            "Understand relationships"
+        ],
+        "ac_descriptors": [
+            "Use problem-solving skills to resolve conflict",
+            "Consider points of view of others",
+            "Develop strategies to manage conflict"
+        ]
+    },
+    "Aggression (Adult)": {
+        "primary": "PSC",
+        "elements": ["Self-management", "Social management"],
+        "skills_to_develop": [
+            "Express emotions appropriately",
+            "Communicate effectively",
+            "Develop self-discipline and set goals"
+        ],
+        "ac_descriptors": [
+            "Express strong emotions appropriately",
+            "Develop positive relationships with adults",
+            "Respond appropriately to guidance"
+        ]
+    },
+    "Self-Harm": {
+        "primary": "PSC",
+        "elements": ["Self-awareness", "Self-management"],
+        "skills_to_develop": [
+            "Recognise emotions",
+            "Become confident, resilient and adaptable",
+            "Develop reflective practice"
+        ],
+        "ac_descriptors": [
+            "Identify and express emotions in safe ways",
+            "Develop coping strategies",
+            "Seek help when needed"
+        ]
+    },
+    "Verbal Aggression": {
+        "primary": "PSC",
+        "elements": ["Self-management", "Social management"],
+        "skills_to_develop": [
+            "Express emotions appropriately",
+            "Communicate effectively",
+            "Negotiate and resolve conflict"
+        ],
+        "ac_descriptors": [
+            "Use respectful language",
+            "Express disagreement appropriately",
+            "Consider impact of words on others"
+        ]
+    },
+    "Other": {
+        "primary": "PSC",
+        "elements": ["Self-awareness", "Self-management"],
+        "skills_to_develop": [
+            "Recognise emotions",
+            "Express emotions appropriately",
+            "Develop self-discipline and set goals"
+        ],
+        "ac_descriptors": [
+            "Identify triggers and patterns",
+            "Develop self-regulation strategies",
+            "Set and work toward personal goals"
+        ]
+    }
+}
+
+# Antecedent to AC Skills Connection
+ANTECEDENT_AC_SKILLS = {
+    "Peer": {
+        "capability": "PSC",
+        "focus_elements": ["Social awareness", "Social management"],
+        "teaching_priority": ["Perspective-taking", "Conflict resolution", "Emotional regulation in social contexts"]
+    },
+    "Transition": {
+        "capability": "PSC", 
+        "focus_elements": ["Self-management", "Self-awareness"],
+        "teaching_priority": ["Flexibility", "Coping with change", "Self-regulation"]
+    },
+    "Instructions": {
+        "capability": "PSC",
+        "focus_elements": ["Self-management", "Social management"],
+        "teaching_priority": ["Following routines", "Responding to guidance", "Task completion"]
+    },
+    "Engagement": {
+        "capability": "CCT",
+        "focus_elements": ["Reflecting", "Generating"],
+        "teaching_priority": ["Persistence", "Problem-solving", "Growth mindset"]
+    },
+    "Sensory": {
+        "capability": "PSC",
+        "focus_elements": ["Self-awareness", "Self-management"],
+        "teaching_priority": ["Body awareness", "Self-advocacy", "Regulation strategies"]
+    },
+    "Other": {
+        "capability": "PSC",
+        "focus_elements": ["Self-awareness", "Self-management"],
+        "teaching_priority": ["Emotional literacy", "Help-seeking", "Coping strategies"]
+    }
+}
+
+# CONSISTENT COLOUR SCHEME FOR GRAPHS
+CHART_COLORS = {
+    "primary": "#008080",      # Teal
+    "secondary": "#228B22",    # Forest Green  
+    "accent": "#4682B4",       # Steel Blue
+    "warning": "#DC3545",      # Red
+    "success": "#28A745",      # Green
+    "neutral": "#6C757D",      # Gray
+    "light": "#E8F4F8",        # Light teal
+    "regular_incident": "#4A90A4",   # Teal-blue for regular incidents
+    "critical_incident": "#DC3545",  # Red for critical incidents
+    "gradient": ["#008080", "#20B2AA", "#48D1CC", "#7FFFD4"]  # Teal gradient
+}
+
 def format_time_12hr(time_str):
     """Convert 24hr time string to 12hr format"""
     try:
@@ -347,6 +554,148 @@ def format_hypothesis(hyp):
         return hyp
     else:
         return "Unknown"
+
+def get_ac_capability_for_behaviour(behaviour_type):
+    """Get Australian Curriculum capability information for a behaviour type"""
+    if behaviour_type in BEHAVIOUR_AC_MAPPING:
+        mapping = BEHAVIOUR_AC_MAPPING[behaviour_type]
+        capability_code = mapping["primary"]
+        capability_info = AC_CAPABILITIES.get(capability_code, {})
+        return {
+            "code": capability_code,
+            "name": capability_info.get("name", ""),
+            "elements": mapping["elements"],
+            "skills_to_develop": mapping["skills_to_develop"],
+            "ac_descriptors": mapping["ac_descriptors"],
+            "color": capability_info.get("color", "#4A90A4")
+        }
+    return None
+
+def get_ac_skills_for_antecedent(antecedent):
+    """Get AC skill focus based on antecedent category"""
+    # Determine antecedent category from the full antecedent string
+    ant_lower = antecedent.lower() if antecedent else ""
+    
+    category = "Other"
+    if "peer" in ant_lower:
+        category = "Peer"
+    elif "transition" in ant_lower:
+        category = "Transition"
+    elif "instruction" in ant_lower:
+        category = "Instructions"
+    elif "engagement" in ant_lower or "demand" in ant_lower or "task" in ant_lower:
+        category = "Engagement"
+    elif "sensory" in ant_lower:
+        category = "Sensory"
+    
+    if category in ANTECEDENT_AC_SKILLS:
+        skills = ANTECEDENT_AC_SKILLS[category]
+        capability_info = AC_CAPABILITIES.get(skills["capability"], {})
+        return {
+            "category": category,
+            "capability_code": skills["capability"],
+            "capability_name": capability_info.get("name", ""),
+            "focus_elements": skills["focus_elements"],
+            "teaching_priority": skills["teaching_priority"],
+            "color": capability_info.get("color", "#4A90A4")
+        }
+    return None
+
+def generate_ac_learning_goals(behaviour_type, antecedent, grade):
+    """Generate AC-aligned learning goals based on behaviour and grade level"""
+    beh_mapping = BEHAVIOUR_AC_MAPPING.get(behaviour_type, BEHAVIOUR_AC_MAPPING["Other"])
+    
+    # Adjust complexity based on grade
+    try:
+        grade_num = int(grade.replace("Y", "").replace("R", "0"))
+    except:
+        grade_num = 3  # Default to middle primary
+    
+    # Generate grade-appropriate goals
+    if grade_num <= 2:  # Foundation to Year 2
+        complexity = "foundational"
+        verbs = ["identify", "recognise", "begin to use", "with support"]
+    elif grade_num <= 4:  # Years 3-4
+        complexity = "developing"
+        verbs = ["describe", "demonstrate", "use", "with guidance"]
+    elif grade_num <= 6:  # Years 5-6
+        complexity = "consolidating"
+        verbs = ["explain", "apply", "independently use", "evaluate"]
+    else:  # Years 7+
+        complexity = "extending"
+        verbs = ["analyse", "critically reflect", "independently demonstrate", "adapt"]
+    
+    goals = []
+    for i, skill in enumerate(beh_mapping["skills_to_develop"][:3]):
+        verb = verbs[i % len(verbs)]
+        goals.append({
+            "skill": skill,
+            "goal": f"Student will {verb} {skill.lower()}",
+            "ac_descriptor": beh_mapping["ac_descriptors"][i] if i < len(beh_mapping["ac_descriptors"]) else "",
+            "complexity": complexity
+        })
+    
+    return goals
+
+def get_intervention_ac_alignment(interventions):
+    """Map interventions to AC capability development"""
+    intervention_ac_map = {
+        "CPI Supportive stance": {
+            "capability": "PSC",
+            "element": "Relationship/Self-management",
+            "supports": "Co-regulation and safety"
+        },
+        "Offered break": {
+            "capability": "PSC",
+            "element": "Self-management",
+            "supports": "Self-regulation and body awareness"
+        },
+        "Reduced demand": {
+            "capability": "PSC",
+            "element": "Self-management",
+            "supports": "Building stamina gradually"
+        },
+        "Provided choices": {
+            "capability": "PSC",
+            "element": "Self-management/Social management",
+            "supports": "Agency and decision-making"
+        },
+        "Removed audience": {
+            "capability": "PSC",
+            "element": "Social awareness",
+            "supports": "Dignity and self-awareness"
+        },
+        "Visual supports": {
+            "capability": "CCT",
+            "element": "Analysing/Reflecting",
+            "supports": "Processing and understanding expectations"
+        },
+        "Co-regulation": {
+            "capability": "PSC",
+            "element": "Self-management/Social awareness",
+            "supports": "Emotional regulation through relationship"
+        },
+        "Prompted coping skill": {
+            "capability": "PSC",
+            "element": "Self-management",
+            "supports": "Building independent regulation"
+        },
+        "Redirection": {
+            "capability": "CCT",
+            "element": "Generating/Analysing",
+            "supports": "Flexible thinking and alternatives"
+        }
+    }
+    
+    alignments = []
+    if isinstance(interventions, list):
+        for intervention in interventions:
+            if intervention in intervention_ac_map:
+                alignments.append({
+                    "intervention": intervention,
+                    **intervention_ac_map[intervention]
+                })
+    return alignments
 
 def show_severity_guide():
     """Enhanced Behaviour Severity Continuum matching uploaded image"""
@@ -795,9 +1144,10 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
             ("4. Clinical Interpretation", "7"),
             ("5. Berry Street Education Model Framework", "8"),
             ("6. Crisis Prevention Institute (CPI) Principles", "10"),
-            ("7. Evidence-Based Recommendations", "11"),
-            ("8. Action Plan & Timeline", "12"),
-            ("9. Review Schedule", "13"),
+            ("7. Australian Curriculum - General Capabilities", "11"),
+            ("8. Evidence-Based Recommendations", "12"),
+            ("9. Action Plan & Timeline", "13"),
+            ("10. Review Schedule", "14"),
         ]
         
         toc_table = doc.add_table(rows=len(toc_items), cols=2)
@@ -1290,10 +1640,168 @@ The behaviour '{top_beh}' is the primary concern. From a trauma-informed perspec
         doc.add_page_break()
         
         # ================================================================
-        # EVIDENCE-BASED RECOMMENDATIONS
+        # AUSTRALIAN CURRICULUM CAPABILITIES SECTION
         # ================================================================
         
-        heading = doc.add_heading('7. Evidence-Based Recommendations', 1)
+        heading = doc.add_heading('7. Australian Curriculum - General Capabilities', 1)
+        for run in heading.runs:
+            run.font.color.rgb = PRIMARY_COLOR
+            set_arial(run, 16)
+        
+        ac_intro = doc.add_paragraph()
+        ac_intro_run = ac_intro.add_run(
+            "The Australian Curriculum includes General Capabilities that are developed across all learning areas. "
+            "Behaviour support is directly connected to the Personal and Social Capability, which encompasses "
+            "self-awareness, self-management, social awareness, and social management."
+        )
+        set_arial(ac_intro_run, 11)
+        
+        doc.add_paragraph()
+        
+        # Get AC information for this student's primary behaviour
+        ac_info = get_ac_capability_for_behaviour(top_beh) if 'get_ac_capability_for_behaviour' in dir() else None
+        
+        if ac_info:
+            # Primary Capability Box
+            cap_heading = doc.add_heading('Primary Capability Focus', 2)
+            for run in cap_heading.runs:
+                run.font.color.rgb = PRIMARY_COLOR
+            
+            cap_table = doc.add_table(rows=1, cols=1)
+            cap_table.columns[0].width = Inches(6.5)
+            cap_cell = cap_table.rows[0].cells[0]
+            shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="E3F2FD" w:val="clear"/>')
+            cap_cell._tc.get_or_add_tcPr().append(shading)
+            
+            cap_para = cap_cell.paragraphs[0]
+            cap_run = cap_para.add_run(f"{ac_info['name']} ({ac_info['code']})")
+            cap_run.bold = True
+            cap_run.font.size = Pt(14)
+            cap_run.font.color.rgb = PRIMARY_COLOR
+            
+            elements_para = cap_cell.add_paragraph()
+            elements_run = elements_para.add_run(f"Focus Elements: {', '.join(ac_info['elements'])}")
+            elements_run.font.size = Pt(11)
+            
+            doc.add_paragraph()
+            
+            # Skills to Develop
+            skills_heading = doc.add_heading('Skills to Develop (AC-Aligned)', 2)
+            for run in skills_heading.runs:
+                run.font.color.rgb = PRIMARY_COLOR
+            
+            for skill in ac_info['skills_to_develop']:
+                p = doc.add_paragraph(style='List Bullet')
+                p.add_run(skill)
+            
+            doc.add_paragraph()
+            
+            # AC Descriptors
+            desc_heading = doc.add_heading('Curriculum Descriptors', 2)
+            for run in desc_heading.runs:
+                run.font.color.rgb = PRIMARY_COLOR
+            
+            for desc in ac_info['ac_descriptors']:
+                p = doc.add_paragraph(style='List Bullet')
+                run = p.add_run(desc)
+                run.italic = True
+        
+        else:
+            # Default PSC content if no specific mapping
+            psc_heading = doc.add_heading('Personal and Social Capability', 2)
+            for run in psc_heading.runs:
+                run.font.color.rgb = PRIMARY_COLOR
+            
+            psc_elements = doc.add_paragraph()
+            psc_elements.add_run("Key Elements for Behaviour Support:").bold = True
+            
+            psc_list = [
+                ("Self-awareness", "Recognise emotions, understand themselves as learners"),
+                ("Self-management", "Express emotions appropriately, develop self-discipline, become resilient"),
+                ("Social awareness", "Appreciate diverse perspectives, understand relationships"),
+                ("Social management", "Communicate effectively, resolve conflict, work collaboratively")
+            ]
+            
+            for element, description in psc_list:
+                p = doc.add_paragraph(style='List Bullet')
+                run1 = p.add_run(f"{element}: ")
+                run1.bold = True
+                p.add_run(description)
+        
+        doc.add_paragraph()
+        
+        # Learning Goals
+        goals_heading = doc.add_heading('AC-Aligned Learning Goals', 2)
+        for run in goals_heading.runs:
+            run.font.color.rgb = PRIMARY_COLOR
+        
+        goals_intro = doc.add_paragraph()
+        goals_intro.add_run(f"Suggested goals for {student['name']} based on behaviour patterns and grade level ({student['grade']}):").italic = True
+        
+        # Generate grade-appropriate goals
+        learning_goals = generate_ac_learning_goals(top_beh, top_ant, student['grade']) if 'generate_ac_learning_goals' in dir() else []
+        
+        if learning_goals:
+            goals_table = doc.add_table(rows=len(learning_goals) + 1, cols=3)
+            goals_table.style = 'Table Grid'
+            
+            # Header row
+            headers = ["Skill Focus", "Learning Goal", "AC Descriptor"]
+            for j, header in enumerate(headers):
+                cell = goals_table.rows[0].cells[j]
+                run = cell.paragraphs[0].add_run(header)
+                run.bold = True
+                shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="008080" w:val="clear"/>')
+                cell._tc.get_or_add_tcPr().append(shading)
+                run.font.color.rgb = RGBColor(255, 255, 255)
+            
+            # Data rows
+            for i, goal in enumerate(learning_goals):
+                goals_table.rows[i + 1].cells[0].paragraphs[0].add_run(goal['skill'])
+                goals_table.rows[i + 1].cells[1].paragraphs[0].add_run(goal['goal'])
+                desc_run = goals_table.rows[i + 1].cells[2].paragraphs[0].add_run(goal['ac_descriptor'])
+                desc_run.italic = True
+        else:
+            # Default goals
+            default_goals = [
+                ("Emotional recognition", f"Student will identify and name emotions when prompted", "Recognise emotions"),
+                ("Help-seeking", f"Student will use a help-seeking strategy independently", "Work independently and show initiative"),
+                ("Self-regulation", f"Student will use a calming strategy when dysregulated", "Express emotions appropriately")
+            ]
+            
+            for skill, goal, desc in default_goals:
+                p = doc.add_paragraph(style='List Bullet')
+                run1 = p.add_run(f"{skill}: ")
+                run1.bold = True
+                p.add_run(f"{goal} ")
+                desc_run = p.add_run(f"({desc})")
+                desc_run.italic = True
+        
+        doc.add_paragraph()
+        
+        # Connection note
+        connection_box = doc.add_table(rows=1, cols=1)
+        connection_box.columns[0].width = Inches(6.5)
+        conn_cell = connection_box.rows[0].cells[0]
+        shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="FFF8E1" w:val="clear"/>')
+        conn_cell._tc.get_or_add_tcPr().append(shading)
+        
+        conn_para = conn_cell.paragraphs[0]
+        conn_title = conn_para.add_run("Important: ")
+        conn_title.bold = True
+        conn_para.add_run(
+            "Progress in Personal and Social Capability should be documented alongside behaviour data. "
+            "This demonstrates growth in underlying skills, not just reduction in incidents. "
+            "AC capabilities provide a positive, strengths-based framework for reporting student progress."
+        )
+        
+        doc.add_page_break()
+        
+        # ================================================================
+        # EVIDENCE-BASED RECOMMENDATIONS (Updated numbering)
+        # ================================================================
+        
+        heading = doc.add_heading('8. Evidence-Based Recommendations', 1)
         for run in heading.runs:
             run.font.color.rgb = PRIMARY_COLOR
             set_arial(run, 16)
@@ -1336,7 +1844,7 @@ The behaviour '{top_beh}' is the primary concern. From a trauma-informed perspec
         # ACTION PLAN & TIMELINE
         # ================================================================
         
-        heading = doc.add_heading('8. Action Plan & Timeline', 1)
+        heading = doc.add_heading('9. Action Plan & Timeline', 1)
         for run in heading.runs:
             run.font.color.rgb = PRIMARY_COLOR
             set_arial(run, 16)
@@ -1378,7 +1886,7 @@ The behaviour '{top_beh}' is the primary concern. From a trauma-informed perspec
         # REVIEW SCHEDULE
         # ================================================================
         
-        heading = doc.add_heading('9. Review Schedule', 1)
+        heading = doc.add_heading('10. Review Schedule', 1)
         for run in heading.runs:
             run.font.color.rgb = PRIMARY_COLOR
             set_arial(run, 16)
@@ -2800,7 +3308,7 @@ def render_student_analysis_page():
             x=daily_quick["date_parsed"], 
             y=daily_quick["count"],
             name='Regular Incidents',
-            marker=dict(color='#3b82f6', line=dict(color='white', width=1)),
+            marker=dict(color='#4A90A4', line=dict(color='white', width=1)),
             text=daily_quick["count"],
             textposition='inside',
             textfont=dict(color='white', size=11, family='Arial Black'),
@@ -2877,7 +3385,7 @@ def render_student_analysis_page():
     
     fig2.add_trace(go.Bar(
         y=all_behaviours, x=quick_beh_counts, name='Regular', orientation='h',
-        marker=dict(color='#3b82f6', line=dict(color='white', width=1)),
+        marker=dict(color='#4A90A4', line=dict(color='white', width=1)),
         text=quick_beh_counts, textposition='inside',
         textfont=dict(color='white', size=11, family='Arial Black'),
         hovertemplate='<b>%{y}</b><br>Regular: %{x}<extra></extra>'
@@ -2950,7 +3458,7 @@ def render_student_analysis_page():
     
     fig3.add_trace(go.Bar(
         y=all_triggers, x=quick_ant_counts, name='Regular', orientation='h',
-        marker=dict(color='#3b82f6', line=dict(color='white', width=1)),
+        marker=dict(color='#4A90A4', line=dict(color='white', width=1)),
         text=quick_ant_counts, textposition='inside',
         textfont=dict(color='white', size=11, family='Arial Black')
     ))
@@ -3014,7 +3522,7 @@ def render_student_analysis_page():
         fig4.add_trace(go.Scatter(
             x=quick_only_df["date_parsed"], y=quick_only_df["severity"],
             mode='markers', name='Regular',
-            marker=dict(size=12, color='#3b82f6', opacity=0.7, line=dict(color='white', width=1.5)),
+            marker=dict(size=12, color='#4A90A4', opacity=0.7, line=dict(color='white', width=1.5)),
             hovertemplate='<b>Date:</b> %{x}<br><b>Severity:</b> %{y}<extra></extra>'
         ))
     
@@ -3092,7 +3600,7 @@ def render_student_analysis_page():
     
     fig5.add_trace(go.Bar(
         y=all_locations, x=quick_loc_counts, name='Regular', orientation='h',
-        marker=dict(color='#3b82f6', line=dict(color='white', width=1)),
+        marker=dict(color='#4A90A4', line=dict(color='white', width=1)),
         text=quick_loc_counts, textposition='inside',
         textfont=dict(color='white', size=11, family='Arial Black')
     ))
@@ -3162,7 +3670,7 @@ def render_student_analysis_page():
     
     fig6.add_trace(go.Bar(
         x=session_order, y=quick_session_counts, name='Regular',
-        marker=dict(color='#3b82f6', line=dict(color='white', width=1)),
+        marker=dict(color='#4A90A4', line=dict(color='white', width=1)),
         text=quick_session_counts, textposition='inside',
         textfont=dict(color='white', size=12, family='Arial Black')
     ))
@@ -3223,7 +3731,7 @@ def render_student_analysis_page():
     fig7 = go.Figure()
     fig7.add_trace(go.Bar(
         x=day_counts.index, y=day_counts.values,
-        marker=dict(color='#64748b'),
+        marker=dict(color='#008080'),
         text=day_counts.values, textposition='outside'
     ))
     fig7.update_layout(
@@ -3239,14 +3747,338 @@ def render_student_analysis_page():
                    "**Berry Street Relationship:** Strong connections reduce incidents.")
     st.markdown("---")
     
-    # CLINICAL SUMMARY
-    st.markdown("### 🧠 Clinical Summary")
-    st.caption("Evidence-based interpretation using ABA, Trauma-Informed Practice, Berry Street Education Model, and CPI principles")
+    # ================================================================
+    # NEW: HYPOTHESIS/FUNCTION ANALYSIS
+    # ================================================================
+    
+    st.markdown("### 🎯 Behaviour Function Analysis")
+    st.caption("Understanding the purpose behind behaviours using Applied Behaviour Analysis (ABA)")
+    
+    # Analyse hypothesis patterns
+    if not quick_only_df.empty and 'hypothesis_function' in quick_only_df.columns:
+        # Function distribution
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**Function Distribution**")
+            func_counts = quick_only_df['hypothesis_function'].value_counts()
+            
+            fig_func = go.Figure()
+            colors_func = ['#008080' if f == 'To avoid' else '#20B2AA' for f in func_counts.index]
+            fig_func.add_trace(go.Pie(
+                labels=func_counts.index,
+                values=func_counts.values,
+                marker=dict(colors=colors_func, line=dict(color='white', width=2)),
+                textinfo='label+percent',
+                textfont=dict(size=12, family='Arial'),
+                hole=0.4
+            ))
+            fig_func.update_layout(
+                height=280,
+                showlegend=False,
+                margin=dict(t=20, b=20, l=20, r=20),
+                paper_bgcolor='white'
+            )
+            st.plotly_chart(fig_func, use_container_width=True)
+        
+        with col2:
+            st.markdown("**What Student is Seeking**")
+            if 'hypothesis_item' in quick_only_df.columns:
+                item_counts = quick_only_df['hypothesis_item'].value_counts()
+                
+                fig_item = go.Figure()
+                fig_item.add_trace(go.Bar(
+                    x=item_counts.values,
+                    y=item_counts.index,
+                    orientation='h',
+                    marker=dict(color=['#4A90A4', '#6BB9A0', '#48D1CC', '#7FFFD4'][:len(item_counts)],
+                               line=dict(color='white', width=1)),
+                    text=item_counts.values,
+                    textposition='inside',
+                    textfont=dict(color='white', size=11, family='Arial Black')
+                ))
+                fig_item.update_layout(
+                    height=280,
+                    xaxis_title="<b>Count</b>",
+                    plot_bgcolor='white',
+                    paper_bgcolor='white',
+                    margin=dict(t=20, b=40, l=20, r=20),
+                    xaxis=dict(gridcolor='#e2e8f0', showline=True, linewidth=2, linecolor='#cbd5e1'),
+                    yaxis=dict(showline=True, linewidth=2, linecolor='#cbd5e1')
+                )
+                st.plotly_chart(fig_item, use_container_width=True)
+        
+        # Interpretation
+        primary_function = func_counts.index[0] if len(func_counts) > 0 else "Unknown"
+        primary_item = item_counts.index[0] if 'hypothesis_item' in quick_only_df.columns and len(item_counts) > 0 else "Unknown"
+        
+        with st.expander("💡 Clinical Interpretation (Behaviour Function)"):
+            st.markdown(f"""
+**Primary Hypothesis:** {primary_function} {primary_item}
+
+**What This Means:**
+- **{primary_function}** behaviours indicate the student is trying to {'escape or avoid something aversive' if primary_function == 'To avoid' else 'access or obtain something desired'}
+- **{primary_item}** focus suggests intervention should target {'reducing demands or modifying environment' if primary_item == 'Activity' else 'sensory regulation strategies' if primary_item == 'Sensory' else 'increasing positive attention and connection' if primary_item == 'Attention' else 'teaching appropriate requesting skills'}
+
+**Berry Street Connection:**
+- {'**BODY Domain:** Focus on regulation before challenging activities' if primary_function == 'To avoid' else '**RELATIONSHIP Domain:** Increase positive attention and connection opportunities'}
+            """)
+    
+    st.markdown("---")
+    
+    # ================================================================
+    # NEW: AUSTRALIAN CURRICULUM CAPABILITIES SECTION
+    # ================================================================
+    
+    st.markdown("### 🎓 Australian Curriculum - General Capabilities Analysis")
+    st.caption("Linking behaviour support to curriculum outcomes (Personal and Social Capability focus)")
     
     top_beh = full_df["behaviour_type"].mode()[0] if len(full_df) > 0 else "Unknown"
     top_ant = full_df["antecedent"].mode()[0] if len(full_df) > 0 else "Unknown"
     top_loc = full_df["location"].mode()[0] if len(full_df) > 0 else "Unknown"
     top_session = full_df["session"].mode()[0] if len(full_df) > 0 else "Unknown"
+    
+    # Get AC capability information
+    ac_info = get_ac_capability_for_behaviour(top_beh)
+    ant_ac_info = get_ac_skills_for_antecedent(top_ant)
+    
+    if ac_info:
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            st.markdown(f"""
+<div style='background: linear-gradient(135deg, #E8F4F8 0%, #D4EEF4 100%); padding: 1.5rem; border-radius: 10px; border-left: 4px solid {ac_info['color']}; margin-bottom: 1rem;'>
+    <h4 style='color: #008080; margin: 0 0 0.5rem 0;'>Primary Capability: {ac_info['name']}</h4>
+    <p style='margin: 0; color: #333;'><strong>Focus Elements:</strong> {', '.join(ac_info['elements'])}</p>
+</div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("**Skills to Develop (AC Aligned):**")
+            for skill in ac_info['skills_to_develop']:
+                st.markdown(f"• {skill}")
+            
+            st.markdown("**Curriculum Descriptors:**")
+            for desc in ac_info['ac_descriptors']:
+                st.markdown(f"• _{desc}_")
+        
+        with col2:
+            # AC Capability visual
+            st.markdown("**Capability Focus**")
+            
+            # Create a simple gauge/indicator
+            fig_ac = go.Figure()
+            
+            capabilities = ["PSC", "CCT", "EU", "ICU"]
+            cap_names = ["Personal & Social", "Critical Thinking", "Ethical", "Intercultural"]
+            cap_colors = ['#4A90A4', '#6BB9A0', '#E8B960', '#D4A574']
+            
+            # Highlight the primary capability
+            values = [1 if c == ac_info['code'] else 0.3 for c in capabilities]
+            
+            fig_ac.add_trace(go.Bar(
+                x=cap_names,
+                y=values,
+                marker=dict(color=cap_colors, line=dict(color='white', width=1)),
+                text=['PRIMARY' if v == 1 else '' for v in values],
+                textposition='inside',
+                textfont=dict(color='white', size=10, family='Arial Black')
+            ))
+            fig_ac.update_layout(
+                height=200,
+                showlegend=False,
+                yaxis=dict(visible=False),
+                xaxis=dict(tickangle=-45),
+                margin=dict(t=10, b=60, l=10, r=10),
+                plot_bgcolor='white',
+                paper_bgcolor='white'
+            )
+            st.plotly_chart(fig_ac, use_container_width=True)
+    
+    # Generate AC-aligned learning goals
+    learning_goals = generate_ac_learning_goals(top_beh, top_ant, student['grade'])
+    
+    st.markdown("**Suggested Learning Goals (Grade-Appropriate):**")
+    goals_table = []
+    for goal in learning_goals:
+        goals_table.append({
+            "Skill Focus": goal['skill'],
+            "Learning Goal": goal['goal'],
+            "AC Descriptor": goal['ac_descriptor'],
+            "Complexity": goal['complexity'].title()
+        })
+    
+    if goals_table:
+        goals_df = pd.DataFrame(goals_table)
+        st.dataframe(goals_df, hide_index=True, use_container_width=True)
+    
+    with st.expander("💡 Understanding AC General Capabilities"):
+        st.markdown("""
+**Personal and Social Capability** is developed when students:
+- Learn to understand themselves and others
+- Manage their emotions, relationships and lives
+- Develop resilience and a sense of self-worth
+- Work effectively with others
+- Make responsible decisions
+
+**Connection to Behaviour Support:**
+All behaviour is an attempt to meet a need. When we support students to develop Personal and Social Capability skills, we give them the tools to meet their needs in prosocial ways. This is not just behaviour management - it is curriculum-aligned skill development.
+
+**Assessment Note:** Progress in these capabilities should be documented alongside behaviour data to show growth in underlying skills, not just reduction in incidents.
+        """)
+    
+    st.markdown("---")
+    
+    # ================================================================
+    # NEW: INTERVENTION EFFECTIVENESS ANALYSIS
+    # ================================================================
+    
+    st.markdown("### 💊 Intervention Analysis")
+    st.caption("Which strategies are being used and their connection to capability development")
+    
+    if not quick_only_df.empty and 'intervention' in quick_only_df.columns:
+        # Flatten interventions
+        all_interventions = []
+        for interventions in quick_only_df['intervention']:
+            if isinstance(interventions, list):
+                all_interventions.extend(interventions)
+            elif isinstance(interventions, str):
+                all_interventions.append(interventions)
+        
+        if all_interventions:
+            intervention_counts = pd.Series(all_interventions).value_counts()
+            
+            col1, col2 = st.columns([3, 2])
+            
+            with col1:
+                fig_int = go.Figure()
+                fig_int.add_trace(go.Bar(
+                    y=intervention_counts.index[:8],
+                    x=intervention_counts.values[:8],
+                    orientation='h',
+                    marker=dict(
+                        color=['#008080', '#20B2AA', '#48D1CC', '#4A90A4', '#6BB9A0', '#7FFFD4', '#40E0D0', '#00CED1'][:len(intervention_counts)],
+                        line=dict(color='white', width=1)
+                    ),
+                    text=intervention_counts.values[:8],
+                    textposition='inside',
+                    textfont=dict(color='white', size=11, family='Arial Black')
+                ))
+                fig_int.update_layout(
+                    height=300,
+                    xaxis_title="<b>Times Used</b>",
+                    plot_bgcolor='white',
+                    paper_bgcolor='white',
+                    margin=dict(t=20, b=40, l=20, r=20),
+                    xaxis=dict(gridcolor='#e2e8f0', showline=True, linewidth=2, linecolor='#cbd5e1'),
+                    yaxis=dict(showline=True, linewidth=2, linecolor='#cbd5e1')
+                )
+                st.plotly_chart(fig_int, use_container_width=True)
+            
+            with col2:
+                st.markdown("**Intervention-Capability Alignment**")
+                
+                # Get AC alignment for top interventions
+                top_interventions = intervention_counts.head(4).index.tolist()
+                alignments = get_intervention_ac_alignment(top_interventions)
+                
+                for align in alignments:
+                    st.markdown(f"""
+<div style='background: #f8f9fa; padding: 0.8rem; border-radius: 6px; margin-bottom: 0.5rem; border-left: 3px solid #008080;'>
+    <strong style='color: #008080;'>{align['intervention']}</strong><br>
+    <small style='color: #666;'>{align['capability']} - {align['element']}</small><br>
+    <small style='color: #333;'>Supports: {align['supports']}</small>
+</div>
+                    """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # ================================================================
+    # NEW: WEEK-OVER-WEEK TREND ANALYSIS
+    # ================================================================
+    
+    st.markdown("### 📈 Weekly Trend Analysis")
+    st.caption("Tracking progress over time to inform intervention adjustments")
+    
+    if len(full_df) >= 7:
+        full_df['week'] = full_df['date_parsed'].dt.isocalendar().week
+        weekly_stats = full_df.groupby('week').agg({
+            'severity': ['count', 'mean'],
+            'incident_type': lambda x: (x == 'Critical').sum()
+        }).reset_index()
+        weekly_stats.columns = ['Week', 'Total Incidents', 'Avg Severity', 'Critical Count']
+        
+        if len(weekly_stats) >= 2:
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                fig_weekly = go.Figure()
+                fig_weekly.add_trace(go.Scatter(
+                    x=weekly_stats['Week'],
+                    y=weekly_stats['Total Incidents'],
+                    mode='lines+markers',
+                    name='Total Incidents',
+                    line=dict(color='#008080', width=3),
+                    marker=dict(size=10, color='#008080', line=dict(color='white', width=2))
+                ))
+                fig_weekly.add_trace(go.Scatter(
+                    x=weekly_stats['Week'],
+                    y=weekly_stats['Critical Count'],
+                    mode='lines+markers',
+                    name='Critical Incidents',
+                    line=dict(color='#DC3545', width=3, dash='dash'),
+                    marker=dict(size=10, color='#DC3545', symbol='diamond', line=dict(color='white', width=2))
+                ))
+                fig_weekly.update_layout(
+                    height=280,
+                    xaxis_title="<b>Week Number</b>",
+                    yaxis_title="<b>Count</b>",
+                    plot_bgcolor='white',
+                    paper_bgcolor='white',
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                    xaxis=dict(gridcolor='#e2e8f0', showline=True, linewidth=2, linecolor='#cbd5e1'),
+                    yaxis=dict(gridcolor='#e2e8f0', showline=True, linewidth=2, linecolor='#cbd5e1')
+                )
+                st.plotly_chart(fig_weekly, use_container_width=True)
+            
+            with col2:
+                # Week-over-week change
+                if len(weekly_stats) >= 2:
+                    last_week = weekly_stats.iloc[-1]
+                    prev_week = weekly_stats.iloc[-2]
+                    
+                    incident_change = last_week['Total Incidents'] - prev_week['Total Incidents']
+                    severity_change = last_week['Avg Severity'] - prev_week['Avg Severity']
+                    
+                    st.markdown("**Week-over-Week Change**")
+                    
+                    col_a, col_b = st.columns(2)
+                    with col_a:
+                        delta_color = "inverse" if incident_change <= 0 else "normal"
+                        st.metric("Incidents", int(last_week['Total Incidents']), 
+                                 delta=f"{int(incident_change):+d}", delta_color=delta_color)
+                    with col_b:
+                        delta_color = "inverse" if severity_change <= 0 else "normal"
+                        st.metric("Avg Severity", f"{last_week['Avg Severity']:.1f}",
+                                 delta=f"{severity_change:+.1f}", delta_color=delta_color)
+                    
+                    # Trend interpretation
+                    if incident_change < 0 and severity_change < 0:
+                        st.success("📉 **Improving:** Both incidents and severity decreasing")
+                    elif incident_change > 0 and severity_change > 0:
+                        st.error("📈 **Concern:** Both incidents and severity increasing")
+                    elif incident_change < 0:
+                        st.info("📊 **Mixed:** Fewer incidents but severity unchanged/increasing")
+                    else:
+                        st.warning("📊 **Monitor:** Patterns require continued observation")
+    
+    st.markdown("---")
+    
+    # ================================================================
+    # ENHANCED CLINICAL SUMMARY
+    # ================================================================
+    
+    st.markdown("### 🧠 Clinical Summary & AC-Aligned Recommendations")
+    st.caption("Evidence-based interpretation using ABA, Berry Street, CPI, and Australian Curriculum frameworks")
     
     recent = full_df.tail(7)
     risk_score = min(100, int(
@@ -3256,24 +4088,54 @@ def render_student_analysis_page():
     ))
     risk_level = "LOW" if risk_score < 30 else "MODERATE" if risk_score < 60 else "HIGH"
     
-    st.info(f"""
-    **Key Patterns Identified:**
-    - Primary behaviour: **{top_beh}**
-    - Main trigger: **{top_ant}**
-    - Hotspot location: **{top_loc}**
-    - Peak time: **{top_session}**
-    - Risk Level: **{risk_level}** ({risk_score}/100)
+    col1, col2 = st.columns([2, 1])
     
-    **Berry Street Focus:** Body (regulation) and Relationship (connection) domains are foundation.
-    """)
+    with col1:
+        st.info(f"""
+**Key Patterns Identified:**
+- Primary behaviour: **{top_beh}**
+- Main trigger: **{top_ant}**
+- Hotspot location: **{top_loc}**
+- Peak time: **{top_session}**
+- Risk Level: **{risk_level}** ({risk_score}/100)
+
+**Primary AC Capability Focus:** {ac_info['name'] if ac_info else 'Personal and Social Capability'}
+**Berry Street Focus:** Body (regulation) and Relationship (connection) domains are foundation.
+        """)
+    
+    with col2:
+        # Risk gauge
+        risk_color = '#28A745' if risk_score < 30 else '#FFC107' if risk_score < 60 else '#DC3545'
+        st.markdown(f"""
+<div style='text-align: center; padding: 1rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px;'>
+    <div style='font-size: 3rem; font-weight: bold; color: {risk_color};'>{risk_score}</div>
+    <div style='font-size: 0.9rem; color: #666;'>Risk Score</div>
+    <div style='font-size: 1.2rem; font-weight: bold; color: {risk_color};'>{risk_level}</div>
+</div>
+        """, unsafe_allow_html=True)
     
     st.success(f"""
-    **Evidence-Based Recommendations:**
-    
-    **1. Body Domain:** Regulated start before {top_session}, breathing exercises, movement breaks
-    **2. Relationship Domain:** Key adult check-in, acknowledgment of feelings, co-regulation
-    **3. Stamina Domain:** Teach help-seeking, practice requesting breaks
-    **4. SMART Goal:** Over 5 weeks, use help-seeking strategy in 4/5 opportunities
+**Evidence-Based Recommendations (AC-Aligned):**
+
+**1. Body Domain (PSC: Self-management)**
+- Regulated start before {top_session} session
+- Breathing exercises and movement breaks
+- *AC Goal: "Express emotions appropriately"*
+
+**2. Relationship Domain (PSC: Social awareness & management)**
+- Key adult check-in each morning
+- Acknowledgment of feelings before demands
+- *AC Goal: "Develop positive relationships"*
+
+**3. Stamina Domain (PSC: Self-management)**
+- Teach help-seeking using visual supports
+- Practice requesting breaks in calm moments
+- *AC Goal: "Persist when faced with challenges"*
+
+**4. SMART Goal (AC-Aligned):**
+Over 5 weeks, {student['name']} will use a help-seeking strategy (e.g., break card, signal to adult) in 4 out of 5 opportunities when experiencing triggers related to '{top_ant[:30]}...', with visual and verbal support.
+
+*This goal addresses PSC element: "Work independently and show initiative"*
     """)
     
     st.markdown("---")
