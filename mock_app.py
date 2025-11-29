@@ -1293,7 +1293,8 @@ def load_students_from_db():
 def save_student_to_db(student):
     """Save a student to Supabase database"""
     if not supabase:
-        return False
+        # DEMO MODE: Return True to allow app to function without database
+        return True
     
     try:
         # Convert grade to just the number if it starts with Y
@@ -1330,7 +1331,8 @@ def save_student_to_db(student):
 def delete_student_from_db(student_id):
     """Delete a student from Supabase database"""
     if not supabase:
-        return False
+        # DEMO MODE: Return True to allow app to function without database
+        return True
     
     try:
         supabase.table('students').delete().eq('id', student_id).execute()
@@ -1386,7 +1388,8 @@ def load_staff_from_db():
 def save_staff_to_db(staff_member):
     """Save a staff member to Supabase database"""
     if not supabase:
-        return False
+        # DEMO MODE: Return True to allow app to function without database
+        return True
     
     try:
         data = {
@@ -1416,7 +1419,8 @@ def save_staff_to_db(staff_member):
 def delete_staff_from_db(staff_id):
     """Delete a staff member from Supabase database"""
     if not supabase:
-        return False
+        # DEMO MODE: Return True to allow app to function without database
+        return True
     
     try:
         supabase.table('staff').delete().eq('id', staff_id).execute()
@@ -1465,7 +1469,8 @@ def load_incidents_from_db(student_id=None):
 def save_incident_to_db(incident):
     """Save an incident to Supabase database"""
     if not supabase:
-        return False
+        # DEMO MODE: Return True to allow app to function without database
+        return True
     
     try:
         data = {
@@ -1539,7 +1544,8 @@ def load_critical_incidents_from_db(student_id=None):
 def save_critical_incident_to_db(critical):
     """Save a critical incident to Supabase database"""
     if not supabase:
-        return False
+        # DEMO MODE: Return True to allow app to function without database
+        return True
     
     try:
         primary = critical.get('ABCH_primary', {})
