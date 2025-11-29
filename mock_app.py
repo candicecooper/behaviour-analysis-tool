@@ -539,684 +539,909 @@ Admin summary included for departmental log.
 
 
 def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, top_loc, top_session, risk_score, risk_level):
-    """Generate comprehensive BAP with matplotlib graphs (no Chrome/Kaleido needed)"""
+    """Generate PROFESSIONAL Behaviour Analysis Plan with enhanced formatting"""
     try:
         from docx import Document
-        from docx.shared import Inches, Pt, RGBColor
-        from docx.enum.text import WD_ALIGN_PARAGRAPH
+        from docx.shared import Inches, Pt, RGBColor, Cm, Twips
+        from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
+        from docx.enum.table import WD_TABLE_ALIGNMENT, WD_CELL_VERTICAL_ALIGNMENT
+        from docx.enum.style import WD_STYLE_TYPE
+        from docx.oxml.ns import qn, nsdecls
+        from docx.oxml import parse_xml
         import matplotlib.pyplot as plt
         import matplotlib
         matplotlib.use('Agg')
+        from matplotlib.ticker import MaxNLocator
+        import numpy as np
         
-        # ARIAL FONT SETUP
-        from docx.oxml.ns import qn
-        
-        def set_arial(run):
-            """Set Arial font for a run"""
-            run.font.name = 'Arial'
-            run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Arial')
-        
-        # GREEN COLOR for headings
-        GREEN_RGB = RGBColor(34, 139, 34)
-        
+        # Color scheme - Professional teal/green theme
+        PRIMARY_COLOR = RGBColor(0, 128, 128)      # Teal
+        SECONDARY_COLOR = RGBColor(34, 139, 34)    # Forest Green
+        ACCENT_COLOR = RGBColor(70, 130, 180)      # Steel Blue
+        DARK_TEXT = RGBColor(33, 37, 41)           # Dark gray
+        LIGHT_BG = RGBColor(248, 249, 250)         # Light gray
+        WARNING_COLOR = RGBColor(220, 53, 69)      # Red for high risk
+        SUCCESS_COLOR = RGBColor(40, 167, 69)      # Green for low risk
         
         PROGRAM_NAMES = {"JP": "Junior Primary", "PY": "Primary Years", "SY": "Senior Years"}
         
         doc = Document()
         
-        # Set default font to Arial
+        # ================================================================
+        # DOCUMENT STYLES SETUP
+        # ================================================================
+        
+        def set_arial(run, size=11):
+            """Set Arial font for a run"""
+            run.font.name = 'Arial'
+            run.font.size = Pt(size)
+            run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Arial')
+        
+        # Set default styles
         style = doc.styles['Normal']
         font = style.font
         font.name = 'Arial'
+        font.size = Pt(11)
         style.element.rPr.rFonts.set(qn('w:eastAsia'), 'Arial')
         
-       # ====================================================================
-        # BEHAVIOUR ANALYSIS REPORT GENERATION - COMPLETE UPDATED VERSION
-        # This replaces lines 337-816 in app_supabase.py
-        # ====================================================================
+        # Modify heading styles
+        for i in range(1, 4):
+            heading_style = doc.styles[f'Heading {i}']
+            heading_style.font.name = 'Arial'
+            heading_style.font.color.rgb = PRIMARY_COLOR
+            heading_style.font.bold = True
         
-        # TITLE PAGE
-        heading = doc.add_heading('Behaviour Analysis Plan', 0)
-        for run in heading.runs:
-            run.font.color.rgb = GREEN_RGB
-            set_arial(run)
-        heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        def add_horizontal_line(doc):
+            """Add a horizontal line separator"""
+            p = doc.add_paragraph()
+            p.paragraph_format.space_before = Pt(6)
+            p.paragraph_format.space_after = Pt(6)
+            pBdr = parse_xml(
+                r'<w:pBdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+                r'<w:bottom w:val="single" w:sz="6" w:space="1" w:color="008080"/>'
+                r'</w:pBdr>'
+            )
+            p._p.get_or_add_pPr().append(pBdr)
+            return p
         
-        subtitle = doc.add_paragraph('Evidence-Based Analysis & Recommendations')
+        def create_info_box(doc, title, content, box_color="E8F4F8"):
+            """Create a colored info box"""
+            table = doc.add_table(rows=1, cols=1)
+            table.autofit = False
+            table.columns[0].width = Inches(6.5)
+            cell = table.rows[0].cells[0]
+            
+            # Set cell shading
+            shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{box_color}" w:val="clear"/>')
+            cell._tc.get_or_add_tcPr().append(shading)
+            
+            # Add title
+            title_para = cell.paragraphs[0]
+            title_run = title_para.add_run(title)
+            title_run.bold = True
+            title_run.font.size = Pt(12)
+            title_run.font.color.rgb = PRIMARY_COLOR
+            set_arial(title_run, 12)
+            
+            # Add content
+            content_para = cell.add_paragraph()
+            content_run = content_para.add_run(content)
+            set_arial(content_run, 11)
+            
+            doc.add_paragraph()  # Spacing after box
+            return table
+        
+        def create_metric_table(doc, metrics):
+            """Create a professional metrics table"""
+            cols = len(metrics)
+            table = doc.add_table(rows=2, cols=cols)
+            table.alignment = WD_TABLE_ALIGNMENT.CENTER
+            
+            for i, (label, value, color) in enumerate(metrics):
+                # Header cell
+                header_cell = table.rows[0].cells[i]
+                header_para = header_cell.paragraphs[0]
+                header_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                header_run = header_para.add_run(label)
+                header_run.bold = True
+                header_run.font.size = Pt(10)
+                header_run.font.color.rgb = DARK_TEXT
+                
+                # Value cell
+                value_cell = table.rows[1].cells[i]
+                value_para = value_cell.paragraphs[0]
+                value_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                value_run = value_para.add_run(str(value))
+                value_run.bold = True
+                value_run.font.size = Pt(18)
+                value_run.font.color.rgb = color
+                
+                # Add cell shading
+                for cell in [header_cell, value_cell]:
+                    shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="F8F9FA" w:val="clear"/>')
+                    cell._tc.get_or_add_tcPr().append(shading)
+            
+            doc.add_paragraph()
+            return table
+        
+        # ================================================================
+        # COVER PAGE
+        # ================================================================
+        
+        # Add spacing at top
+        for _ in range(3):
+            doc.add_paragraph()
+        
+        # Logo placeholder
+        logo_para = doc.add_paragraph()
+        logo_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        logo_run = logo_para.add_run("[SCHOOL LOGO]")
+        logo_run.font.size = Pt(14)
+        logo_run.font.color.rgb = RGBColor(150, 150, 150)
+        
+        doc.add_paragraph()
+        
+        # School name
+        school = doc.add_paragraph()
+        school.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        school_run = school.add_run("COWANDILLA LEARNING CENTRE")
+        school_run.bold = True
+        school_run.font.size = Pt(24)
+        school_run.font.color.rgb = PRIMARY_COLOR
+        set_arial(school_run, 24)
+        
+        # Subtitle
+        subtitle = doc.add_paragraph()
         subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        for run in subtitle.runs:
-            run.font.size = Pt(14)
-            run.font.color.rgb = RGBColor(100, 116, 139)
+        sub_run = subtitle.add_run("Learning and Behaviour Support Unit")
+        sub_run.font.size = Pt(14)
+        sub_run.font.color.rgb = DARK_TEXT
+        set_arial(sub_run, 14)
+        
+        doc.add_paragraph()
+        add_horizontal_line(doc)
+        doc.add_paragraph()
+        
+        # Main title
+        title = doc.add_paragraph()
+        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        title_run = title.add_run("BEHAVIOUR ANALYSIS PLAN")
+        title_run.bold = True
+        title_run.font.size = Pt(32)
+        title_run.font.color.rgb = SECONDARY_COLOR
+        set_arial(title_run, 32)
         
         doc.add_paragraph()
         
-        # Add analysis image
-        try:
-            import matplotlib
-            matplotlib.use('Agg')
-            import matplotlib.pyplot as plt
-            import matplotlib.patches as mpatches
-            from matplotlib.patches import FancyBboxPatch, Circle
-            import numpy as np
-            
-            fig, ax = plt.subplots(figsize=(6, 3), dpi=150)
-            ax.set_xlim(0, 10)
-            ax.set_ylim(0, 5)
-            ax.axis('off')
-            
-            # Background
-            ax.add_patch(FancyBboxPatch((0, 0), 10, 5, boxstyle="round,pad=0.1", 
-                                        facecolor='#f8fafc', edgecolor='#e2e8f0', linewidth=2))
-            
-            # Bar chart
-            bars_x = [1.5, 2.5, 3.5, 4.5, 5.5]
-            bars_y = [2.5, 3.2, 2.8, 3.5, 3.0]
-            for x, y in zip(bars_x, bars_y):
-                ax.add_patch(plt.Rectangle((x-0.3, 0.5), 0.6, y-0.5, 
-                                          facecolor='#3b82f6', alpha=0.7))
-            
-            # Trend line
-            line_x = np.linspace(6.5, 9.5, 50)
-            line_y = 1.5 + (line_x - 6.5) * 0.2
-            ax.plot(line_x, line_y, color='#22c55e', linewidth=3, alpha=0.8)
-            ax.scatter([6.5, 7.5, 8.5, 9.5], [1.5, 1.7, 2.1, 2.3], 
-                      s=60, color='#22c55e', zorder=5, alpha=0.8)
-            
-            # Icons
-            circle = Circle((1, 1.5), 0.4, facecolor='none', edgecolor='#0ea5e9', linewidth=3)
-            ax.add_patch(circle)
-            ax.plot([1.3, 1.6], [1.2, 0.9], color='#0ea5e9', linewidth=3)
-            
-            plt.tight_layout()
-            
-            img_stream = BytesIO()
-            plt.savefig(img_stream, format='png', dpi=150, bbox_inches='tight', 
-                       facecolor='white', edgecolor='none')
-            img_stream.seek(0)
-            plt.close()
-            
-            doc.add_picture(img_stream, width=Inches(5))
-            last_paragraph = doc.paragraphs[-1]
-            last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        except:
-            pass
+        # Student name box
+        student_box = doc.add_table(rows=1, cols=1)
+        student_box.alignment = WD_TABLE_ALIGNMENT.CENTER
+        student_box.columns[0].width = Inches(4)
+        student_cell = student_box.rows[0].cells[0]
+        shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="E8F5E9" w:val="clear"/>')
+        student_cell._tc.get_or_add_tcPr().append(shading)
+        
+        student_para = student_cell.paragraphs[0]
+        student_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        student_run = student_para.add_run(student['name'].upper())
+        student_run.bold = True
+        student_run.font.size = Pt(20)
+        student_run.font.color.rgb = SECONDARY_COLOR
+        set_arial(student_run, 20)
+        
+        grade_para = student_cell.add_paragraph()
+        grade_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        grade_run = grade_para.add_run(f"{PROGRAM_NAMES.get(student['program'], student['program'])} | Grade {student['grade']}")
+        grade_run.font.size = Pt(12)
+        set_arial(grade_run, 12)
         
         doc.add_paragraph()
-        branding = doc.add_paragraph('Prepared by: Learning and Behaviour Unit')
-        branding.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        for run in branding.runs:
-            run.font.size = Pt(11)
-            run.font.bold = True
-            run.font.color.rgb = RGBColor(14, 165, 233)
+        doc.add_paragraph()
+        
+        # Date and classification
+        date_para = doc.add_paragraph()
+        date_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        date_run = date_para.add_run(f"Analysis Date: {datetime.now().strftime('%d %B %Y')}")
+        date_run.font.size = Pt(12)
+        set_arial(date_run, 12)
+        
+        period_para = doc.add_paragraph()
+        period_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        period_run = period_para.add_run(f"Data Period: {full_df['date_parsed'].min().strftime('%d/%m/%Y')} - {full_df['date_parsed'].max().strftime('%d/%m/%Y')}")
+        period_run.font.size = Pt(11)
+        period_run.font.color.rgb = RGBColor(100, 100, 100)
+        set_arial(period_run, 11)
+        
+        # Add spacing before confidentiality notice
+        for _ in range(4):
+            doc.add_paragraph()
+        
+        # Confidentiality notice
+        conf_box = doc.add_table(rows=1, cols=1)
+        conf_box.alignment = WD_TABLE_ALIGNMENT.CENTER
+        conf_box.columns[0].width = Inches(5.5)
+        conf_cell = conf_box.rows[0].cells[0]
+        shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="FFF3CD" w:val="clear"/>')
+        conf_cell._tc.get_or_add_tcPr().append(shading)
+        
+        conf_para = conf_cell.paragraphs[0]
+        conf_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        conf_run = conf_para.add_run("CONFIDENTIAL DOCUMENT")
+        conf_run.bold = True
+        conf_run.font.size = Pt(11)
+        conf_run.font.color.rgb = RGBColor(133, 100, 4)
+        
+        conf_para2 = conf_cell.add_paragraph()
+        conf_para2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        conf_run2 = conf_para2.add_run("This document contains sensitive student information and should be handled in accordance with privacy legislation.")
+        conf_run2.font.size = Pt(9)
+        conf_run2.font.color.rgb = RGBColor(133, 100, 4)
         
         doc.add_page_break()
         
-        # SCHOOL NAME HEADER
-        school_name = doc.add_heading('Cowandilla Learning Centre', 0)
-        school_name.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        for run in school_name.runs:
-            run.font.color.rgb = GREEN_RGB
-            run.font.size = Pt(18)
-            set_arial(run)
+        # ================================================================
+        # TABLE OF CONTENTS
+        # ================================================================
+        
+        toc_heading = doc.add_heading('Contents', 1)
+        for run in toc_heading.runs:
+            run.font.color.rgb = PRIMARY_COLOR
+            set_arial(run, 16)
+        
+        toc_items = [
+            ("1. Executive Summary", "3"),
+            ("2. Key Metrics & Risk Assessment", "3"),
+            ("3. Visual Analytics", "4"),
+            ("4. Clinical Interpretation", "7"),
+            ("5. Berry Street Education Model Framework", "8"),
+            ("6. Crisis Prevention Institute (CPI) Principles", "10"),
+            ("7. Evidence-Based Recommendations", "11"),
+            ("8. Action Plan & Timeline", "12"),
+            ("9. Review Schedule", "13"),
+        ]
+        
+        toc_table = doc.add_table(rows=len(toc_items), cols=2)
+        toc_table.columns[0].width = Inches(5)
+        toc_table.columns[1].width = Inches(1)
+        
+        for i, (item, page) in enumerate(toc_items):
+            toc_table.rows[i].cells[0].paragraphs[0].add_run(item)
+            page_para = toc_table.rows[i].cells[1].paragraphs[0]
+            page_para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            page_para.add_run(page)
+        
+        doc.add_paragraph()
+        add_horizontal_line(doc)
+        doc.add_page_break()
+        
+        # ================================================================
+        # EXECUTIVE SUMMARY
+        # ================================================================
+        
+        heading = doc.add_heading('1. Executive Summary', 1)
+        for run in heading.runs:
+            run.font.color.rgb = PRIMARY_COLOR
+            set_arial(run, 16)
+        
+        # Key metrics in a professional table
+        total_incidents = len(full_df)
+        critical_count = len(full_df[full_df['incident_type'] == 'Critical']) if 'incident_type' in full_df.columns else 0
+        avg_severity = full_df['severity'].mean()
+        
+        risk_color = WARNING_COLOR if risk_score > 60 else (RGBColor(255, 193, 7) if risk_score > 30 else SUCCESS_COLOR)
+        
+        metrics = [
+            ("Total Incidents", total_incidents, ACCENT_COLOR),
+            ("Critical Incidents", critical_count, WARNING_COLOR if critical_count > 0 else SUCCESS_COLOR),
+            ("Avg Severity", f"{avg_severity:.1f}/5", ACCENT_COLOR),
+            ("Risk Score", f"{risk_score}/100", risk_color),
+        ]
+        
+        create_metric_table(doc, metrics)
+        
+        # Executive summary text
+        summary_text = f"""This Behaviour Analysis Plan presents a comprehensive analysis of {total_incidents} recorded behavioural incidents for {student['name']} over the analysis period. 
+
+The data reveals that the primary behaviour of concern is '{top_beh}', most commonly triggered by '{top_ant}'. Incidents predominantly occur in {top_loc} during the {top_session} session.
+
+The current risk level is assessed as {risk_level.upper()} ({risk_score}/100). This assessment considers incident frequency, severity patterns, and escalation trends."""
+
+        summary_para = doc.add_paragraph()
+        summary_run = summary_para.add_run(summary_text)
+        set_arial(summary_run, 11)
+        summary_para.paragraph_format.line_spacing = 1.5
         
         doc.add_paragraph()
         
-        # STUDENT INFORMATION
-        heading = doc.add_heading('Student Information', 1)
-        for run in heading.runs:
-            run.font.color.rgb = GREEN_RGB
-            set_arial(run)
-            
-        info_table = doc.add_table(rows=5, cols=2)
-        info_table.style = 'Light Grid Accent 1'
-        info_table.rows[0].cells[0].text = 'Student:'
-        info_table.rows[0].cells[1].text = student['name']
-        info_table.rows[1].cells[0].text = 'Program:'
-        info_table.rows[1].cells[1].text = PROGRAM_NAMES.get(student['program'], student['program'])
-        info_table.rows[2].cells[0].text = 'Grade:'
-        info_table.rows[2].cells[1].text = student['grade']
-        info_table.rows[3].cells[0].text = 'Analysis completed on:'
-        info_table.rows[3].cells[1].text = datetime.now().strftime('%d %B %Y')
-        info_table.rows[4].cells[0].text = 'Data Period:'
-        info_table.rows[4].cells[1].text = f"{full_df['date_parsed'].min().strftime('%d/%m/%Y')} - {full_df['date_parsed'].max().strftime('%d/%m/%Y')}"
-        
-        doc.add_paragraph()
-        
-        # SUMMARY
-        heading = doc.add_heading('Summary', 1)
-        for run in heading.runs:
-            run.font.color.rgb = GREEN_RGB
-            set_arial(run)
-            
-        summary = doc.add_paragraph()
-        summary.add_run('Total Incidents: ').bold = True
-        summary.add_run(f"{len(full_df)}\n")
-        summary.add_run('Critical Incidents: ').bold = True
-        summary.add_run(f"{len(full_df[full_df['incident_type'] == 'Critical'])}\n")
-        summary.add_run('Average Severity: ').bold = True
-        summary.add_run(f"{full_df['severity'].mean():.2f}/5\n")
-        summary.add_run('Risk Level: ').bold = True
-        summary.add_run(f"{risk_level} ({risk_score}/100)")
-        
-        doc.add_paragraph()
-        
-        # KEY FINDINGS
-        heading = doc.add_heading('Key Findings', 1)
-        for run in heading.runs:
-            run.font.color.rgb = GREEN_RGB
-            set_arial(run)
-            
-        findings = doc.add_paragraph()
-        findings.add_run('Behaviours of Concern: ').bold = True
-        findings.add_run(f"{top_beh}\n\n")
-        findings.add_run('Most Common Trigger: ').bold = True
-        findings.add_run(f"{top_ant}\n\n")
-        findings.add_run('Hotspot Location: ').bold = True
-        findings.add_run(f"{top_loc}\n\n")
-        findings.add_run('Occurs mainly in the: ').bold = True
-        findings.add_run(f"{top_session}")
+        # Key findings box
+        create_info_box(doc, "KEY FINDINGS AT A GLANCE", 
+            f"• Primary Behaviour: {top_beh}\n"
+            f"• Key Trigger: {top_ant}\n"
+            f"• Hotspot Location: {top_loc}\n"
+            f"• Peak Time: {top_session} session\n"
+            f"• Risk Level: {risk_level} ({risk_score}/100)",
+            "E3F2FD")
         
         doc.add_page_break()
         
+        # ================================================================
+        # KEY METRICS & RISK ASSESSMENT
+        # ================================================================
+        
+        heading = doc.add_heading('2. Key Metrics & Risk Assessment', 1)
+        for run in heading.runs:
+            run.font.color.rgb = PRIMARY_COLOR
+            set_arial(run, 16)
+        
+        # Risk assessment matrix visualization
+        doc.add_heading('Risk Assessment Matrix', 2)
+        
+        # Create risk matrix as a matplotlib figure
+        fig, ax = plt.subplots(figsize=(8, 3), dpi=150)
+        
+        # Risk scale
+        risk_zones = [
+            (0, 30, '#28a745', 'LOW'),
+            (30, 60, '#ffc107', 'MODERATE'),
+            (60, 80, '#fd7e14', 'HIGH'),
+            (80, 100, '#dc3545', 'CRITICAL')
+        ]
+        
+        for start, end, color, label in risk_zones:
+            ax.barh(0, end-start, left=start, height=0.6, color=color, edgecolor='white', linewidth=2)
+            ax.text((start+end)/2, 0, label, ha='center', va='center', fontsize=10, fontweight='bold', color='white')
+        
+        # Add marker for current risk
+        ax.scatter([risk_score], [0], s=300, c='black', marker='v', zorder=5)
+        ax.text(risk_score, 0.45, f'{risk_score}', ha='center', va='bottom', fontsize=12, fontweight='bold')
+        
+        ax.set_xlim(0, 100)
+        ax.set_ylim(-0.5, 0.7)
+        ax.axis('off')
+        ax.set_title('Current Risk Level', fontsize=14, fontweight='bold', pad=10)
+        
+        plt.tight_layout()
+        img_buffer = BytesIO()
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+        img_buffer.seek(0)
+        doc.add_picture(img_buffer, width=Inches(6))
+        plt.close()
+        
+        doc.add_paragraph()
+        
+        # Detailed breakdown table
+        doc.add_heading('Incident Breakdown', 2)
+        
+        breakdown_table = doc.add_table(rows=6, cols=2)
+        breakdown_table.style = 'Table Grid'
+        breakdown_table.columns[0].width = Inches(3)
+        breakdown_table.columns[1].width = Inches(3)
+        
+        breakdown_data = [
+            ("Metric", "Value"),
+            ("Total Recorded Incidents", str(total_incidents)),
+            ("Critical Incidents (Severity 3+)", str(len(full_df[full_df['severity'] >= 3]))),
+            ("Average Incident Duration", f"{full_df['duration_minutes'].mean():.0f} minutes" if 'duration_minutes' in full_df.columns else "N/A"),
+            ("Most Active Day", full_df['day_of_week'].mode().iloc[0] if 'day_of_week' in full_df.columns and len(full_df) > 0 else "N/A"),
+            ("Data Collection Period", f"{(full_df['date_parsed'].max() - full_df['date_parsed'].min()).days} days"),
+        ]
+        
+        for i, (label, value) in enumerate(breakdown_data):
+            breakdown_table.rows[i].cells[0].paragraphs[0].add_run(label).bold = (i == 0)
+            breakdown_table.rows[i].cells[1].paragraphs[0].add_run(value).bold = (i == 0)
+            if i == 0:
+                for cell in breakdown_table.rows[i].cells:
+                    shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="008080" w:val="clear"/>')
+                    cell._tc.get_or_add_tcPr().append(shading)
+                    for run in cell.paragraphs[0].runs:
+                        run.font.color.rgb = RGBColor(255, 255, 255)
+        
+        doc.add_page_break()
+        
+        # ================================================================
         # VISUAL ANALYTICS
-        heading = doc.add_heading('Visual Analytics', 1)
+        # ================================================================
+        
+        heading = doc.add_heading('3. Visual Analytics', 1)
         for run in heading.runs:
-            run.font.color.rgb = GREEN_RGB
-            set_arial(run)
-        doc.add_paragraph('The following graphs provide visual representation of incident patterns and trends.')
+            run.font.color.rgb = PRIMARY_COLOR
+            set_arial(run, 16)
+        
+        intro = doc.add_paragraph()
+        intro_run = intro.add_run("The following visualisations provide data-driven insights into behavioural patterns, enabling targeted intervention strategies.")
+        set_arial(intro_run, 11)
+        intro_run.italic = True
+        
+        doc.add_paragraph()
         
         plt.style.use('default')
-        from matplotlib.ticker import MaxNLocator
         
-        # GRAPH 1: DAILY INCIDENT FREQUENCY (BAR CHART)
-        heading = doc.add_heading('1. Daily Incident Frequency', 2)
-        for run in heading.runs:
-            run.font.color.rgb = GREEN_RGB
-            set_arial(run)
-            
+        # GRAPH 1: Daily Incident Frequency
+        doc.add_heading('3.1 Daily Incident Frequency', 2)
+        
         daily = full_df.groupby(full_df["date_parsed"].dt.date).size().reset_index(name="count")
         fig, ax = plt.subplots(figsize=(10, 4), dpi=150)
-        ax.bar(daily["date_parsed"], daily["count"], color='#334155', width=0.8, edgecolor='white', linewidth=0.5)
-        ax.set_xlabel('Date', fontsize=11, fontweight='bold')
-        ax.set_ylabel('Incident Count', fontsize=11, fontweight='bold')
+        
+        # Create gradient effect with color based on count
+        colors = ['#4A90A4' if c <= daily['count'].median() else '#2E5A6B' for c in daily['count']]
+        bars = ax.bar(daily["date_parsed"], daily["count"], color=colors, width=0.8, edgecolor='white', linewidth=0.5)
+        
+        ax.set_xlabel('Date', fontsize=11, fontweight='bold', color='#333333')
+        ax.set_ylabel('Number of Incidents', fontsize=11, fontweight='bold', color='#333333')
         ax.grid(True, alpha=0.3, linestyle='--', axis='y')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
         plt.xticks(rotation=45, ha='right')
+        
+        # Add trend line
+        if len(daily) > 2:
+            z = np.polyfit(range(len(daily)), daily['count'], 1)
+            p = np.poly1d(z)
+            ax.plot(daily["date_parsed"], p(range(len(daily))), 
+                   linestyle='--', color='#DC3545', linewidth=2, label='Trend')
+            ax.legend(loc='upper right', frameon=False)
+        
         plt.tight_layout()
         img_buffer = BytesIO()
-        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
         img_buffer.seek(0)
         doc.add_picture(img_buffer, width=Inches(6))
         plt.close()
-        doc.add_paragraph("Daily incident frequency shows when behaviours occur most often.")
+        
+        interpretation = doc.add_paragraph()
+        trend_direction = "increasing" if len(daily) > 2 and z[0] > 0 else "decreasing" if len(daily) > 2 and z[0] < 0 else "stable"
+        int_run = interpretation.add_run(f"Interpretation: The daily incident frequency shows a {trend_direction} trend over the analysis period. Peak incident days should be cross-referenced with environmental factors.")
+        set_arial(int_run, 10)
+        int_run.italic = True
+        
         doc.add_paragraph()
         
-        # GRAPH 2: MOST COMMON BEHAVIOURS
-        heading = doc.add_heading('2. Most Common Behaviours', 2)
-        for run in heading.runs:
-            run.font.color.rgb = GREEN_RGB
-            set_arial(run)
-            
-        beh_counts = full_df["behaviour_type"].value_counts().head(5)
+        # GRAPH 2: Behaviour Type Distribution
+        doc.add_heading('3.2 Behaviour Type Distribution', 2)
+        
+        beh_counts = full_df["behaviour_type"].value_counts().head(6)
         fig, ax = plt.subplots(figsize=(8, 4), dpi=150)
-        ax.barh(beh_counts.index, beh_counts.values, color='#334155')
-        ax.set_xlabel('Incident Count', fontsize=11, fontweight='bold')
+        
+        colors = plt.cm.Blues(np.linspace(0.4, 0.8, len(beh_counts)))[::-1]
+        bars = ax.barh(beh_counts.index, beh_counts.values, color=colors, edgecolor='white', linewidth=1)
+        
+        ax.set_xlabel('Incident Count', fontsize=11, fontweight='bold', color='#333333')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-        for i, v in enumerate(beh_counts.values):
-            ax.text(v + 0.3, i, str(int(v)), va='center', fontweight='bold')
+        
+        for i, (bar, v) in enumerate(zip(bars, beh_counts.values)):
+            ax.text(v + 0.3, bar.get_y() + bar.get_height()/2, str(int(v)), 
+                   va='center', fontweight='bold', fontsize=11)
+        
         plt.tight_layout()
         img_buffer = BytesIO()
-        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
         img_buffer.seek(0)
         doc.add_picture(img_buffer, width=Inches(6))
         plt.close()
-        doc.add_paragraph(f"Primary behaviour of concern: {beh_counts.index[0]} ({int(beh_counts.values[0])} incidents).")
+        
+        interpretation = doc.add_paragraph()
+        int_run = interpretation.add_run(f"Interpretation: '{beh_counts.index[0]}' is the predominant behaviour of concern, accounting for {int(beh_counts.values[0]/total_incidents*100)}% of all incidents.")
+        set_arial(int_run, 10)
+        int_run.italic = True
+        
         doc.add_paragraph()
         
-        # GRAPH 3: MOST COMMON TRIGGERS
-        heading = doc.add_heading('3. Most Common Triggers', 2)
-        for run in heading.runs:
-            run.font.color.rgb = GREEN_RGB
-            set_arial(run)
-            
-        ant_counts = full_df["antecedent"].value_counts().head(5)
+        # GRAPH 3: Trigger Analysis
+        doc.add_heading('3.3 Antecedent/Trigger Analysis', 2)
+        
+        ant_counts = full_df["antecedent"].value_counts().head(6)
         fig, ax = plt.subplots(figsize=(8, 4), dpi=150)
-        ax.barh(ant_counts.index, ant_counts.values, color='#475569')
-        ax.set_xlabel('Incident Count', fontsize=11, fontweight='bold')
+        
+        colors = plt.cm.Greens(np.linspace(0.4, 0.8, len(ant_counts)))[::-1]
+        bars = ax.barh(ant_counts.index, ant_counts.values, color=colors, edgecolor='white', linewidth=1)
+        
+        ax.set_xlabel('Incident Count', fontsize=11, fontweight='bold', color='#333333')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-        for i, v in enumerate(ant_counts.values):
-            ax.text(v + 0.3, i, str(int(v)), va='center', fontweight='bold')
+        
+        for i, (bar, v) in enumerate(zip(bars, ant_counts.values)):
+            ax.text(v + 0.3, bar.get_y() + bar.get_height()/2, str(int(v)), 
+                   va='center', fontweight='bold', fontsize=11)
+        
         plt.tight_layout()
         img_buffer = BytesIO()
-        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
         img_buffer.seek(0)
         doc.add_picture(img_buffer, width=Inches(6))
         plt.close()
-        doc.add_paragraph(f"Key trigger: {ant_counts.index[0]}.")
-        doc.add_paragraph()
         
-        # GRAPH 4: SEVERITY OVER TIME (COLOR-CODED, NO TREND LINE)
-        heading = doc.add_heading('4. Severity Over Time', 2)
-        for run in heading.runs:
-            run.font.color.rgb = GREEN_RGB
-            set_arial(run)
-            
+        interpretation = doc.add_paragraph()
+        int_run = interpretation.add_run(f"Interpretation: Understanding that '{ant_counts.index[0]}' is the primary trigger enables proactive intervention before escalation occurs.")
+        set_arial(int_run, 10)
+        int_run.italic = True
+        
+        doc.add_page_break()
+        
+        # GRAPH 4: Severity Distribution
+        doc.add_heading('3.4 Severity Over Time', 2)
+        
         fig, ax = plt.subplots(figsize=(10, 4), dpi=150)
-        colors = {1: '#10b981', 2: '#3b82f6', 3: '#f59e0b', 4: '#ef4444', 5: '#7f1d1d'}
+        colors = {1: '#28a745', 2: '#20c997', 3: '#ffc107', 4: '#fd7e14', 5: '#dc3545'}
+        labels = {1: 'Level 1 (Low)', 2: 'Level 2 (Minor)', 3: 'Level 3 (Moderate)', 
+                  4: 'Level 4 (Serious)', 5: 'Level 5 (Critical)'}
+        
         for sev_level in [1, 2, 3, 4, 5]:
             sev_data = full_df[full_df['severity'] == sev_level]
             if len(sev_data) > 0:
                 ax.scatter(sev_data["date_parsed"], sev_data["severity"], 
-                          alpha=0.7, s=80, color=colors[sev_level], 
-                          label=f'Level {sev_level}', edgecolors='white', linewidth=0.5)
-        ax.set_xlabel('Date', fontsize=11, fontweight='bold')
-        ax.set_ylabel('Severity', fontsize=11, fontweight='bold')
-        ax.set_ylim(0, 5.5)
-        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+                          alpha=0.8, s=100, color=colors[sev_level], 
+                          label=labels[sev_level], edgecolors='white', linewidth=1)
+        
+        ax.set_xlabel('Date', fontsize=11, fontweight='bold', color='#333333')
+        ax.set_ylabel('Severity Level', fontsize=11, fontweight='bold', color='#333333')
+        ax.set_ylim(0.5, 5.5)
+        ax.set_yticks([1, 2, 3, 4, 5])
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.legend(loc='upper right', frameon=False)
+        ax.legend(loc='upper right', frameon=True, fancybox=True, shadow=True)
         ax.grid(True, alpha=0.3, linestyle='--', axis='y')
         plt.xticks(rotation=45, ha='right')
+        
         plt.tight_layout()
         img_buffer = BytesIO()
-        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
         img_buffer.seek(0)
         doc.add_picture(img_buffer, width=Inches(6))
         plt.close()
-        doc.add_paragraph("Severity levels shown by colour: Green (Level 1-2 = Minor), Blue (Level 3 = Moderate), Orange (Level 4 = Serious), Red (Level 5 = Critical).")
+        
         doc.add_paragraph()
         
-        # GRAPH 5: LOCATION HOTSPOTS
-        heading = doc.add_heading('5. Location Hotspots', 2)
-        for run in heading.runs:
-            run.font.color.rgb = GREEN_RGB
-            set_arial(run)
-            
+        # GRAPH 5: Location Hotspots
+        doc.add_heading('3.5 Location Hotspots', 2)
+        
         loc_counts = full_df["location"].value_counts().head(5)
         fig, ax = plt.subplots(figsize=(8, 4), dpi=150)
-        ax.barh(loc_counts.index, loc_counts.values, color='#64748b')
-        ax.set_xlabel('Incident Count', fontsize=11, fontweight='bold')
+        
+        colors = plt.cm.Oranges(np.linspace(0.4, 0.8, len(loc_counts)))[::-1]
+        bars = ax.barh(loc_counts.index, loc_counts.values, color=colors, edgecolor='white', linewidth=1)
+        
+        ax.set_xlabel('Incident Count', fontsize=11, fontweight='bold', color='#333333')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-        for i, v in enumerate(loc_counts.values):
-            ax.text(v + 0.3, i, str(int(v)), va='center', fontweight='bold')
+        
+        for i, (bar, v) in enumerate(zip(bars, loc_counts.values)):
+            ax.text(v + 0.3, bar.get_y() + bar.get_height()/2, str(int(v)), 
+                   va='center', fontweight='bold', fontsize=11)
+        
         plt.tight_layout()
         img_buffer = BytesIO()
-        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
         img_buffer.seek(0)
         doc.add_picture(img_buffer, width=Inches(6))
         plt.close()
-        doc.add_paragraph(f"Most incidents occur in: {loc_counts.index[0]}.")
+        
+        interpretation = doc.add_paragraph()
+        int_run = interpretation.add_run(f"Interpretation: Environmental modifications in '{loc_counts.index[0]}' may yield significant improvements.")
+        set_arial(int_run, 10)
+        int_run.italic = True
+        
         doc.add_paragraph()
         
-        # GRAPH 6: TIME OF DAY PATTERNS (IMPROVED)
-        heading = doc.add_heading('6. Time of Day Patterns', 2)
-        for run in heading.runs:
-            run.font.color.rgb = GREEN_RGB
-            set_arial(run)
-            
+        # GRAPH 6: Time of Day Pattern (Pie chart for variety)
+        doc.add_heading('3.6 Time of Day Distribution', 2)
+        
         session_counts = full_df["session"].value_counts()
         session_order = ['Morning', 'Middle', 'Afternoon']
         session_counts = session_counts.reindex(session_order, fill_value=0)
-        fig, ax = plt.subplots(figsize=(8, 4), dpi=150)
-        bars = ax.bar(session_counts.index, session_counts.values, color='#475569', edgecolor='white', linewidth=1.5)
-        ax.set_ylabel('Incident Count', fontsize=11, fontweight='bold')
-        ax.set_xlabel('Time of Day', fontsize=11, fontweight='bold')
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
-        for i, (bar, v) in enumerate(zip(bars, session_counts.values)):
-            height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2., height + 0.3,
-                   str(int(v)), ha='center', va='bottom', fontweight='bold', fontsize=11)
+        
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4), dpi=150)
+        
+        # Pie chart
+        colors_pie = ['#4A90A4', '#6BB9A0', '#E8B960']
+        explode = [0.05 if v == session_counts.max() else 0 for v in session_counts.values]
+        ax1.pie(session_counts.values, labels=session_counts.index, autopct='%1.0f%%',
+               colors=colors_pie, explode=explode, shadow=True, startangle=90)
+        ax1.set_title('Distribution by Session', fontsize=12, fontweight='bold')
+        
+        # Bar chart
+        bars = ax2.bar(session_counts.index, session_counts.values, color=colors_pie, edgecolor='white', linewidth=2)
+        ax2.set_ylabel('Incident Count', fontsize=11, fontweight='bold')
+        ax2.spines['top'].set_visible(False)
+        ax2.spines['right'].set_visible(False)
+        ax2.yaxis.set_major_locator(MaxNLocator(integer=True))
+        
+        for bar, v in zip(bars, session_counts.values):
+            ax2.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 0.3,
+                    str(int(v)), ha='center', va='bottom', fontweight='bold', fontsize=12)
+        ax2.set_title('Count by Session', fontsize=12, fontweight='bold')
+        
         plt.tight_layout()
         img_buffer = BytesIO()
-        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
         img_buffer.seek(0)
         doc.add_picture(img_buffer, width=Inches(6))
         plt.close()
+        
         peak_session = session_counts.idxmax()
         peak_count = int(session_counts.max())
-        doc.add_paragraph(f"Peak time: {peak_session} session with {peak_count} incidents. This pattern helps identify when additional support is most needed.")
+        peak_pct = int(peak_count / total_incidents * 100)
+        
+        interpretation = doc.add_paragraph()
+        int_run = interpretation.add_run(f"Interpretation: The {peak_session} session accounts for {peak_pct}% of incidents ({peak_count} total). Staff resourcing and support strategies should prioritise this period.")
+        set_arial(int_run, 10)
+        int_run.italic = True
         
         doc.add_page_break()
         
-        # CLINICAL INTERPRETATION (ENHANCED)
-        heading = doc.add_heading('Clinical Interpretation', 1)
+        # ================================================================
+        # CLINICAL INTERPRETATION
+        # ================================================================
+        
+        heading = doc.add_heading('4. Clinical Interpretation', 1)
         for run in heading.runs:
-            run.font.color.rgb = GREEN_RGB
-            set_arial(run)
+            run.font.color.rgb = PRIMARY_COLOR
+            set_arial(run, 16)
         
         intro = doc.add_paragraph()
-        intro.add_run('This analysis is grounded in evidence-based frameworks that help us understand and support student behaviour. The following interpretation uses:')
-        doc.add_paragraph('• Applied Behaviour Analysis (ABA) - understanding what triggers and maintains behaviours', style='List Bullet')
-        doc.add_paragraph('• Trauma-Informed Practice - recognizing that behaviour is communication and often a response to stress', style='List Bullet')
-        doc.add_paragraph('• Berry Street Education Model - a whole-school approach to wellbeing and engagement', style='List Bullet')
-        doc.add_paragraph('• Crisis Prevention Institute (CPI) principles - de-escalation and maintaining dignity', style='List Bullet')
+        intro.add_run("This analysis is grounded in evidence-based frameworks:").bold = True
+        
+        frameworks = [
+            ("Applied Behaviour Analysis (ABA)", "Understanding what triggers and maintains behaviours"),
+            ("Trauma-Informed Practice", "Recognising that behaviour is communication and often a response to stress"),
+            ("Berry Street Education Model", "A whole-school approach to wellbeing and engagement"),
+            ("Crisis Prevention Institute (CPI)", "De-escalation and maintaining dignity"),
+        ]
+        
+        for framework, description in frameworks:
+            p = doc.add_paragraph(style='List Bullet')
+            run1 = p.add_run(f"{framework}: ")
+            run1.bold = True
+            p.add_run(description)
+        
         doc.add_paragraph()
         
-        # PATTERN ANALYSIS
-        pattern_heading = doc.add_heading('Understanding the Patterns', 2)
-        for run in pattern_heading.runs:
-            run.font.color.rgb = GREEN_RGB
-            set_arial(run)
-        
-        pattern = doc.add_paragraph()
-        pattern.add_run('What the data tells us:\n').bold = True
-        total_incidents = len(full_df)
+        # Pattern analysis box
         morning_pct = (len(full_df[full_df['session'] == 'Morning']) / total_incidents * 100) if total_incidents > 0 else 0
         middle_pct = (len(full_df[full_df['session'] == 'Middle']) / total_incidents * 100) if total_incidents > 0 else 0
         afternoon_pct = (len(full_df[full_df['session'] == 'Afternoon']) / total_incidents * 100) if total_incidents > 0 else 0
-        pattern_text = pattern.add_run(
-            f"Based on analysis of {total_incidents} recorded incidents, {student['name']} experiences the most difficulty "
-            f"when '{top_ant}' occurs. This happens most frequently in {top_loc}, particularly during the {top_session} session. "
-            f"\n\nTime of day breakdown shows: Morning ({morning_pct:.0f}% of incidents), Middle of day ({middle_pct:.0f}%), "
-            f"and Afternoon ({afternoon_pct:.0f}%). This pattern suggests that {student['name']}'s ability to regulate and cope "
-            f"is affected by time of day, likely due to factors like fatigue, hunger, sensory overload, or accumulated stress."
-            f"\n\nThe behaviour '{top_beh}' is the primary concern. From a trauma-informed perspective, this behaviour is "
-            f"{student['name']}'s way of communicating an unmet need or responding to feeling unsafe or overwhelmed. "
-            f"It is not 'naughtiness' or 'choosing' to misbehave - it is a stress response."
-        )
-        set_arial(pattern_text)
-        doc.add_paragraph()
         
-        # BERRY STREET EDUCATION MODEL
-        berry_heading = doc.add_heading('Berry Street Education Model Framework', 2)
-        for run in berry_heading.runs:
-            run.font.color.rgb = GREEN_RGB
-            set_arial(run)
+        pattern_content = f"""Based on analysis of {total_incidents} recorded incidents, {student['name']} experiences the most difficulty when '{top_ant}' occurs. This happens most frequently in {top_loc}, particularly during the {top_session} session.
+
+Time of day breakdown: Morning ({morning_pct:.0f}%), Middle ({middle_pct:.0f}%), Afternoon ({afternoon_pct:.0f}%)
+
+The behaviour '{top_beh}' is the primary concern. From a trauma-informed perspective, this behaviour is {student['name']}'s way of communicating an unmet need or responding to feeling unsafe or overwhelmed. It is not 'naughtiness' or 'choosing' to misbehave - it is a stress response."""
+        
+        create_info_box(doc, "UNDERSTANDING THE PATTERNS", pattern_content, "FFF8E1")
+        
+        doc.add_page_break()
+        
+        # ================================================================
+        # BERRY STREET FRAMEWORK (Condensed)
+        # ================================================================
+        
+        heading = doc.add_heading('5. Berry Street Education Model Framework', 1)
+        for run in heading.runs:
+            run.font.color.rgb = PRIMARY_COLOR
+            set_arial(run, 16)
         
         berry_intro = doc.add_paragraph()
-        berry_intro_text = berry_intro.add_run(
-            "The Berry Street Education Model is an evidence-based whole-school approach developed in partnership "
-            "with Melbourne University. It recognizes that students cannot learn effectively when they are stressed, "
-            "unsafe, or disconnected. The model provides a sequential framework across five domains that must be "
-            "addressed in order:\n"
-        )
-        set_arial(berry_intro_text)
+        berry_intro.add_run("The Berry Street Education Model provides a sequential framework across five domains:").italic = True
         
-        # Domain 1: BODY
-        domain1 = doc.add_paragraph()
-        d1_title = domain1.add_run('\n1. BODY Domain (Physical and Emotional Regulation):\n')
-        d1_title.bold = True
-        set_arial(d1_title)
-        d1_text = domain1.add_run(
-            f"This is the foundation. {student['name']} must feel physically and emotionally safe and regulated before "
-            "anything else can happen. This means:\n"
-            "• Helping the student recognize their own body signals (heart racing, muscles tight, breathing fast)\n"
-            "• Teaching and practicing calming strategies (deep breathing, movement breaks, sensory tools)\n"
-            "• Creating predictable routines so the nervous system feels safe\n"
-            "• Providing regulation breaks BEFORE dysregulation occurs\n"
-            f"• Recognizing that during {top_session}, {student['name']} may need extra body-based support\n\n"
-            "WHY THIS MATTERS: When stressed, the brain's 'thinking centre' goes offline and the 'survival centre' takes over. "
-            "A dysregulated student cannot access learning, problem-solving, or relationship skills. "
-            "We must help them get regulated first."
-        )
-        set_arial(d1_text)
-        
-        # Domain 2: RELATIONSHIP
-        domain2 = doc.add_paragraph()
-        d2_title = domain2.add_run('\n2. RELATIONSHIP Domain (Connection and Trust):\n')
-        d2_title.bold = True
-        set_arial(d2_title)
-        d2_text = domain2.add_run(
-            "Once physically regulated, students need safe, predictable relationships. This means:\n"
-            f"• One key adult who {student['name']} can trust and turn to when struggling\n"
-            "• Consistent, calm responses even during difficult behaviour\n"
-            "• Seeing behaviour as communication, not defiance\n"
-            "• Maintaining connection even when setting boundaries\n"
-            "• Understanding that damaged relationships must be repaired before learning can resume\n\n"
-            "WHY THIS MATTERS: Behaviour often escalates when students feel disconnected, misunderstood, or unsafe "
-            "in relationships. A strong relationship with at least one trusted adult is protective and helps students "
-            "regulate their emotions and behaviour."
-        )
-        set_arial(d2_text)
-        
-        # Domain 3: STAMINA
-        domain3 = doc.add_paragraph()
-        d3_title = domain3.add_run('\n3. STAMINA Domain (Persistence and Resilience):\n')
-        d3_title.bold = True
-        set_arial(d3_title)
-        d3_text = domain3.add_run(
-            f"With regulation and connection in place, we can build {student['name']}'s capacity to persist with challenges:\n"
-            "• Breaking tasks into smaller, achievable steps\n"
-            "• Celebrating effort, not just outcomes\n"
-            "• Teaching that mistakes are part of learning\n"
-            "• Building confidence through success experiences\n"
-            "• Gradually increasing expectations as capacity grows\n\n"
-            "WHY THIS MATTERS: Students who have experienced trauma or chronic stress often have learned that "
-            "'trying' leads to failure or shame. We must rebuild their belief that effort matters and that they are capable."
-        )
-        set_arial(d3_text)
-        
-        # Domain 4: ENGAGEMENT
-        domain4 = doc.add_paragraph()
-        d4_title = domain4.add_run('\n4. ENGAGEMENT Domain (Active Learning Participation):\n')
-        d4_title.bold = True
-        set_arial(d4_title)
-        d4_text = domain4.add_run(
-            "With the first three domains secure, students can engage meaningfully in learning:\n"
-            "• Making learning relevant and purposeful\n"
-            "• Providing choice and autonomy\n"
-            "• Using strengths and interests\n"
-            "• Creating positive relationships with learning\n"
-            f"• Recognizing that during {top_session}, engagement may need additional scaffolding\n\n"
-            "WHY THIS MATTERS: Students cannot engage in learning when dysregulated, disconnected, or defeated. "
-            "Engagement is a result of getting the foundation domains right, not something we can demand."
-        )
-        set_arial(d4_text)
-        
-        # Domain 5: CHARACTER
-        domain5 = doc.add_paragraph()
-        d5_title = domain5.add_run('\n5. CHARACTER Domain (Values and Contribution):\n')
-        d5_title.bold = True
-        set_arial(d5_title)
-        d5_text = domain5.add_run(
-            "The final domain focuses on purpose and positive contribution:\n"
-            "• Developing empathy and perspective-taking\n"
-            "• Understanding impact of actions on others\n"
-            "• Finding ways to contribute positively\n"
-            "• Building identity as a capable, valued person\n\n"
-            "WHY THIS MATTERS: This is NOT about 'being good' or compliance. It's about helping students "
-            "develop a positive sense of self and their place in the community. This domain only works when "
-            "the foundation domains are solid."
-        )
-        set_arial(d5_text)
         doc.add_paragraph()
         
-        berry_application = doc.add_paragraph()
-        ba_title = berry_application.add_run(f'Application to {student["name"]}:\n')
-        ba_title.bold = True
-        set_arial(ba_title)
-        ba_text = berry_application.add_run(
-            f"Currently, our focus must be on BODY and RELATIONSHIP domains. The data shows {student['name']} "
-            f"is dysregulated during {top_session}, particularly when '{top_ant}' occurs. "
-            "We cannot expect engagement or character development until regulation and connection are secure. "
-            "All recommendations in this plan prioritize these foundation domains first."
-        )
-        set_arial(ba_text)
+        # Berry Street domains table
+        domains_table = doc.add_table(rows=6, cols=3)
+        domains_table.style = 'Table Grid'
+        
+        domains_data = [
+            ("Domain", "Focus", "Application"),
+            ("1. BODY", "Physical & emotional regulation", f"Help {student['name']} recognise body signals and use calming strategies before {top_session}"),
+            ("2. RELATIONSHIP", "Connection & trust", "Maintain consistent, calm responses; see behaviour as communication"),
+            ("3. STAMINA", "Persistence & resilience", "Break tasks into smaller steps; celebrate effort, not just outcomes"),
+            ("4. ENGAGEMENT", "Active learning", f"Make learning relevant; provide choice especially when '{top_ant}' occurs"),
+            ("5. CHARACTER", "Values & contribution", "Develop positive sense of self through contribution opportunities"),
+        ]
+        
+        for i, (domain, focus, application) in enumerate(domains_data):
+            for j, text in enumerate([domain, focus, application]):
+                cell = domains_table.rows[i].cells[j]
+                run = cell.paragraphs[0].add_run(text)
+                if i == 0:
+                    run.bold = True
+                    shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="008080" w:val="clear"/>')
+                    cell._tc.get_or_add_tcPr().append(shading)
+                    run.font.color.rgb = RGBColor(255, 255, 255)
+                elif j == 0:
+                    run.bold = True
+        
         doc.add_paragraph()
         
-        # CPI PRINCIPLES
-        cpi_heading = doc.add_heading('Crisis Prevention Institute (CPI) Principles', 2)
-        for run in cpi_heading.runs:
-            run.font.color.rgb = GREEN_RGB
-            set_arial(run)
-        
-        cpi_intro = doc.add_paragraph()
-        cpi_intro_text = cpi_intro.add_run(
-            "CPI provides evidence-based training in de-escalation and crisis prevention. The core principles guide "
-            "how we respond when students are escalating or in crisis:\n"
-        )
-        set_arial(cpi_intro_text)
-        
-        # CPI Principle 1
-        cpi1 = doc.add_paragraph()
-        cpi1_title = cpi1.add_run('\nBehaviour is Communication:\n')
-        cpi1_title.bold = True
-        set_arial(cpi1_title)
-        cpi1_text = cpi1.add_run(
-            f"When {student['name']} displays '{top_beh}', they are communicating something important. "
-            "They might be saying: 'I'm overwhelmed,' 'I feel unsafe,' 'I don't understand,' 'I need help,' "
-            "or 'I'm hungry/tired/stressed.' Our job is to understand the message, not just stop the behaviour."
-        )
-        set_arial(cpi1_text)
-        
-        # CPI Principle 2
-        cpi2 = doc.add_paragraph()
-        cpi2_title = cpi2.add_run('\nSupportive Stance:\n')
-        cpi2_title.bold = True
-        set_arial(cpi2_title)
-        cpi2_text = cpi2.add_run(
-            "How we position our body matters. Stand at an angle (not directly facing), give space (don't crowd), "
-            "keep hands visible and open, stay at or below eye level. Use a low, slow, calm voice. "
-            "Your body language should say: 'I'm here to help, you are safe with me.'"
-        )
-        set_arial(cpi2_text)
-        
-        # CPI Principle 3
-        cpi3 = doc.add_paragraph()
-        cpi3_title = cpi3.add_run('\nMaintain Dignity:\n')
-        cpi3_title.bold = True
-        set_arial(cpi3_title)
-        cpi3_text = cpi3.add_run(
-            "Never shame, embarrass, or humiliate. Don't have an audience for correction. "
-            "Separate the behaviour from the person. The message should always be: 'I care about you, "
-            "even when your behaviour is difficult.'"
-        )
-        set_arial(cpi3_text)
-        
-        # CPI Principle 4
-        cpi4 = doc.add_paragraph()
-        cpi4_title = cpi4.add_run('\nEarly Intervention:\n')
-        cpi4_title.bold = True
-        set_arial(cpi4_title)
-        cpi4_text = cpi4.add_run(
-            f"The data shows that '{top_ant}' is a key trigger. CPI teaches us to intervene early - "
-            "at the first signs of escalation, before crisis. This might mean: offering a break, changing the task, "
-            "providing reassurance, or simply moving to a quieter space. Early intervention prevents crisis."
-        )
-        set_arial(cpi4_text)
-        
-        # CPI Principle 5
-        cpi5 = doc.add_paragraph()
-        cpi5_title = cpi5.add_run('\nCo-Regulation:\n')
-        cpi5_title.bold = True
-        set_arial(cpi5_title)
-        cpi5_text = cpi5.add_run(
-            f"Students like {student['name']} often cannot regulate themselves when dysregulated. "
-            "They need an adult to stay calm and lend them their regulation. Your calm becomes their calm. "
-            "This is why adult self-regulation is essential - you cannot co-regulate if you are also dysregulated."
-        )
-        set_arial(cpi5_text)
-        doc.add_paragraph()
-        
-        cpi_application = doc.add_paragraph()
-        ca_title = cpi_application.add_run(f'Application to {student["name"]}:\n')
-        ca_title.bold = True
-        set_arial(ca_title)
-        ca_text = cpi_application.add_run(
-            f"When incidents occur in {top_loc} during {top_session}, staff should use CPI principles: "
-            "approach calmly with supportive stance, offer choices to maintain dignity, intervene early "
-            f"when '{top_ant}' is present, and provide co-regulation rather than consequences. "
-            "The goal is always to help the student return to their window of tolerance, not to punish."
-        )
-        set_arial(ca_text)
-        
-        doc.add_page_break()
-        heading = doc.add_heading('Evidence-Based Recommendations', 1)
-        for run in heading.runs:
-            run.font.color.rgb = GREEN_RGB
-            set_arial(run)
-        
-        heading = doc.add_heading('1. Body Domain (Regulation)', 2)
-
-        for run in heading.runs:
-
-            run.font.color.rgb = GREEN_RGB
-
-            set_arial(run)
-        doc.add_paragraph(f"• Regulated start before {top_session}", style='List Bullet')
-        doc.add_paragraph(f"• Visual check-in before '{top_ant}'", style='List Bullet')
-        doc.add_paragraph(f"• Environmental modification in {top_loc}", style='List Bullet')
-        doc.add_paragraph("• Sensory regulation opportunities", style='List Bullet')
-        
-        heading = doc.add_heading('2. Relationship Domain (Connection)', 2)
-
-        
-        for run in heading.runs:
-
-        
-            run.font.color.rgb = GREEN_RGB
-
-        
-            set_arial(run)
-        doc.add_paragraph("• Supportive Stance with low, slow voice", style='List Bullet')
-        doc.add_paragraph("• One key adult maintains connection", style='List Bullet')
-        doc.add_paragraph("• Acknowledge feelings", style='List Bullet')
-        doc.add_paragraph("• Offer choices for control", style='List Bullet')
-        
-        heading = doc.add_heading('3. Stamina Domain (Persistence)', 2)
-
-        
-        for run in heading.runs:
-
-        
-            run.font.color.rgb = GREEN_RGB
-
-        
-            set_arial(run)
-        doc.add_paragraph("• Teach help-seeking with visual cues", style='List Bullet')
-        doc.add_paragraph("• Practice requesting breaks", style='List Bullet')
-        doc.add_paragraph("• Emotional literacy skills", style='List Bullet')
-        doc.add_paragraph("• Build coping strategies", style='List Bullet')
-        
-        heading = doc.add_heading('4. SMART Goal', 2)
-
-        
-        for run in heading.runs:
-
-        
-            run.font.color.rgb = GREEN_RGB
-
-        
-            set_arial(run)
-        goal = doc.add_paragraph()
-        goal.add_run('Measurable: ').bold = True
-        goal.add_run("Over 5 weeks, use help-seeking strategy in 4/5 opportunities with support.")
-        doc.add_paragraph()
-        doc.add_paragraph('Review Date: ' + (datetime.now() + timedelta(weeks=5)).strftime('%d %B %Y'))
+        current_focus = doc.add_paragraph()
+        current_focus.add_run("CURRENT PRIORITY: ").bold = True
+        current_focus.add_run(f"Focus on BODY and RELATIONSHIP domains. The data shows {student['name']} is dysregulated during {top_session}, particularly when '{top_ant}' occurs. Engagement and character development require regulation and connection first.")
         
         doc.add_page_break()
         
-        # FOOTER
+        # ================================================================
+        # CPI PRINCIPLES (Condensed)
+        # ================================================================
+        
+        heading = doc.add_heading('6. Crisis Prevention Institute (CPI) Principles', 1)
+        for run in heading.runs:
+            run.font.color.rgb = PRIMARY_COLOR
+            set_arial(run, 16)
+        
+        cpi_principles = [
+            ("Behaviour is Communication", f"When {student['name']} displays '{top_beh}', they are saying: 'I'm overwhelmed,' 'I feel unsafe,' or 'I need help.'"),
+            ("Supportive Stance", "Stand at an angle, give space, keep hands visible, use low/slow voice. Your body language should say: 'I'm here to help.'"),
+            ("Maintain Dignity", "Never shame or embarrass. Separate the behaviour from the person. The message: 'I care about you, even when your behaviour is difficult.'"),
+            ("Early Intervention", f"Intervene at the first signs of escalation when '{top_ant}' is present. Offer a break, change the task, provide reassurance."),
+            ("Co-Regulation", f"{student['name']} often cannot self-regulate when dysregulated. Stay calm and lend them your regulation. Your calm becomes their calm."),
+        ]
+        
+        for title, description in cpi_principles:
+            p = doc.add_paragraph()
+            run1 = p.add_run(f"{title}: ")
+            run1.bold = True
+            run1.font.color.rgb = SECONDARY_COLOR
+            p.add_run(description)
+            doc.add_paragraph()
+        
+        doc.add_page_break()
+        
+        # ================================================================
+        # EVIDENCE-BASED RECOMMENDATIONS
+        # ================================================================
+        
+        heading = doc.add_heading('7. Evidence-Based Recommendations', 1)
+        for run in heading.runs:
+            run.font.color.rgb = PRIMARY_COLOR
+            set_arial(run, 16)
+        
+        # Recommendations table with priority levels
+        rec_table = doc.add_table(rows=9, cols=3)
+        rec_table.style = 'Table Grid'
+        
+        recommendations = [
+            ("Priority", "Recommendation", "Rationale"),
+            ("HIGH", f"Implement regulated start before {top_session}", f"Peak incidents occur during {top_session}"),
+            ("HIGH", f"Environmental modification in {top_loc}", f"Highest incident location"),
+            ("HIGH", f"Visual check-in before '{top_ant}'", "Anticipate and prevent escalation"),
+            ("MEDIUM", "Sensory regulation toolkit", "Support body-based regulation"),
+            ("MEDIUM", "One key adult maintains connection", "Relationship is protective"),
+            ("MEDIUM", "Offer choices for control", "Maintains dignity and autonomy"),
+            ("ONGOING", "Teach help-seeking strategies", "Build long-term coping skills"),
+            ("ONGOING", "Practice emotional literacy", "Develop self-awareness"),
+        ]
+        
+        priority_colors = {"Priority": "008080", "HIGH": "DC3545", "MEDIUM": "FD7E14", "ONGOING": "28A745"}
+        
+        for i, (priority, rec, rationale) in enumerate(recommendations):
+            for j, text in enumerate([priority, rec, rationale]):
+                cell = rec_table.rows[i].cells[j]
+                run = cell.paragraphs[0].add_run(text)
+                if i == 0:
+                    run.bold = True
+                    shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="008080" w:val="clear"/>')
+                    cell._tc.get_or_add_tcPr().append(shading)
+                    run.font.color.rgb = RGBColor(255, 255, 255)
+                elif j == 0:
+                    run.bold = True
+                    color = priority_colors.get(priority, "333333")
+                    run.font.color.rgb = RGBColor(int(color[0:2], 16), int(color[2:4], 16), int(color[4:6], 16))
+        
+        doc.add_page_break()
+        
+        # ================================================================
+        # ACTION PLAN & TIMELINE
+        # ================================================================
+        
+        heading = doc.add_heading('8. Action Plan & Timeline', 1)
+        for run in heading.runs:
+            run.font.color.rgb = PRIMARY_COLOR
+            set_arial(run, 16)
+        
+        # SMART Goal
+        goal_box = create_info_box(doc, "SMART GOAL",
+            f"Within 5 weeks, {student['name']} will use a help-seeking strategy (e.g., break card, signal to adult) in 4 out of 5 opportunities when experiencing triggers related to '{top_ant}', with visual and verbal support.",
+            "E8F5E9")
+        
+        # Timeline table
+        doc.add_heading('Implementation Timeline', 2)
+        
+        timeline_table = doc.add_table(rows=5, cols=3)
+        timeline_table.style = 'Table Grid'
+        
+        review_date = datetime.now() + timedelta(weeks=5)
+        
+        timeline_data = [
+            ("Week", "Focus Area", "Key Actions"),
+            ("Week 1-2", "Assessment & Setup", f"Baseline data collection, environmental audit of {top_loc}, introduce regulation tools"),
+            ("Week 2-3", "Implementation", f"Scheduled regulation breaks before {top_session}, visual supports in place, key adult assigned"),
+            ("Week 3-4", "Skill Building", "Teach and practice help-seeking strategies, emotional vocabulary development"),
+            ("Week 5", "Review", f"Progress review on {review_date.strftime('%d %B %Y')}, data comparison, plan adjustment"),
+        ]
+        
+        for i, (week, focus, actions) in enumerate(timeline_data):
+            for j, text in enumerate([week, focus, actions]):
+                cell = timeline_table.rows[i].cells[j]
+                run = cell.paragraphs[0].add_run(text)
+                if i == 0:
+                    run.bold = True
+                    shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="008080" w:val="clear"/>')
+                    cell._tc.get_or_add_tcPr().append(shading)
+                    run.font.color.rgb = RGBColor(255, 255, 255)
+        
+        doc.add_paragraph()
+        
+        # ================================================================
+        # REVIEW SCHEDULE
+        # ================================================================
+        
+        heading = doc.add_heading('9. Review Schedule', 1)
+        for run in heading.runs:
+            run.font.color.rgb = PRIMARY_COLOR
+            set_arial(run, 16)
+        
+        review_table = doc.add_table(rows=4, cols=3)
+        review_table.style = 'Table Grid'
+        
+        review_data = [
+            ("Review Type", "Date", "Attendees"),
+            ("Weekly Check-in", "Every Friday", "Key adult, classroom teacher"),
+            ("Formal Review", review_date.strftime('%d %B %Y'), "Full support team, parent/caregiver"),
+            ("Plan Renewal", (review_date + timedelta(weeks=5)).strftime('%d %B %Y'), "Support team, leadership"),
+        ]
+        
+        for i, row_data in enumerate(review_data):
+            for j, text in enumerate(row_data):
+                cell = review_table.rows[i].cells[j]
+                run = cell.paragraphs[0].add_run(text)
+                if i == 0:
+                    run.bold = True
+                    shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="008080" w:val="clear"/>')
+                    cell._tc.get_or_add_tcPr().append(shading)
+                    run.font.color.rgb = RGBColor(255, 255, 255)
+        
+        doc.add_paragraph()
+        doc.add_paragraph()
+        
+        # ================================================================
+        # SIGNATURE SECTION
+        # ================================================================
+        
+        add_horizontal_line(doc)
+        
+        sig_heading = doc.add_paragraph()
+        sig_heading.add_run("Prepared By").bold = True
+        
+        sig_table = doc.add_table(rows=2, cols=2)
+        sig_table.columns[0].width = Inches(3)
+        sig_table.columns[1].width = Inches(3)
+        
+        sig_table.rows[0].cells[0].paragraphs[0].add_run("Name: _________________________")
+        sig_table.rows[0].cells[1].paragraphs[0].add_run("Role: _________________________")
+        sig_table.rows[1].cells[0].paragraphs[0].add_run("Signature: _____________________")
+        sig_table.rows[1].cells[1].paragraphs[0].add_run(f"Date: {datetime.now().strftime('%d/%m/%Y')}")
+        
+        doc.add_paragraph()
+        doc.add_paragraph()
+        
+        # Footer
         footer = doc.add_paragraph()
         footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        footer_run = footer.add_run('\n\nLearning and Behaviour Unit\n')
-        footer_run.font.size = Pt(10)
-        footer_run.font.bold = True
-        footer_run.font.color.rgb = RGBColor(14, 165, 233)
+        footer_run = footer.add_run("Cowandilla Learning Centre | Learning and Behaviour Support Unit")
+        footer_run.font.size = Pt(9)
+        footer_run.font.color.rgb = PRIMARY_COLOR
+        footer_run.bold = True
         
         footer2 = doc.add_paragraph()
         footer2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        footer2_run = footer2.add_run('Evidence-based: ABA, Trauma-Informed, Berry Street, CPI\n')
-        footer2_run.font.size = Pt(9)
-        footer2_run.font.color.rgb = RGBColor(100, 116, 139)
+        footer2_run = footer2.add_run("Evidence-based frameworks: Applied Behaviour Analysis | Trauma-Informed Practice | Berry Street Education Model | CPI")
+        footer2_run.font.size = Pt(8)
+        footer2_run.font.color.rgb = RGBColor(128, 128, 128)
         
-        footer3 = doc.add_paragraph()
-        footer3.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        footer3_run = footer3.add_run(datetime.now().strftime('%d %B %Y'))
-        footer3_run.font.size = Pt(9)
-        footer3_run.font.color.rgb = RGBColor(100, 116, 139)
-        
+        # Save document
         file_stream = BytesIO()
         doc.save(file_stream)
         file_stream.seek(0)
@@ -1224,10 +1449,9 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
         
     except Exception as e:
         import traceback
-        st.error(f"BAP Error: {e}")
+        st.error(f"BAP Generation Error: {e}")
         st.error(traceback.format_exc())
         return None
-
 
 # ============================================
 # SUPABASE DATABASE FUNCTIONS
