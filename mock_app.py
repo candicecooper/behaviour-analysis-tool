@@ -2900,14 +2900,6 @@ def render_admin_portal():
                     st.rerun()
             else:
                 st.error("❌ Failed to save incident to database. Please try again.")
-
-                        st.session_state.students.append(new_student)
-                        st.success(f"✅ Added {new_name} (EDID: {new_edid}) to {PROGRAM_NAMES[new_program]}")
-                        st.rerun()
-                    else:
-                        st.error("Please complete all required fields (Name, Grade, EDID, Program)")
-        
-        st.markdown("---")
         
         # EXISTING STUDENTS
         st.markdown("### Current Students")
