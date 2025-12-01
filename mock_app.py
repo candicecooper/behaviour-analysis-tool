@@ -68,7 +68,7 @@ MOCK_STAFF = [
     {"id": "s1", "name": "Emily Jones", "role": "JP", "email": "emily.jones@example.com", "password": "demo123"},
     {"id": "s2", "name": "Daniel Lee", "role": "PY", "email": "daniel.lee@example.com", "password": "demo123"},
     {"id": "s3", "name": "Sarah Chen", "role": "SY", "email": "sarah.chen@example.com", "password": "demo123"},
-    {"id": "s4", "name": "Admin User", "role": "ADM", "email": "admin@example.com", "password": "admin123"},
+    {"id": "s4", "name": "Admin User", "role": "ADM", "email": "admin@school.edu.au", "password": "Admin123!"},
 ]
 
 MOCK_STUDENTS = [
