@@ -9,34 +9,10 @@ from io import BytesIO
 import base64
 import bcrypt
 
-# SUPABASE CONNECTION
-try:
-    from supabase import create_client, Client
-    SUPABASE_AVAILABLE = True
-except ImportError:
-    SUPABASE_AVAILABLE = False
-    st.warning("Supabase not installed. Run: pip install supabase")
+# MOCK DATA MODE - No database connection
+supabase = None  # Using mock data instead of Supabase
 
-# Initialize Supabase client
-@st.cache_resource
-def init_supabase() -> Client:
-    """Initialize Supabase client with credentials from secrets"""
-    if not SUPABASE_AVAILABLE:
-        return None
-    
-    try:
-        url = st.secrets["supabase"]["url"]
-        key = st.secrets["supabase"]["key"]
-        return create_client(url, key)
-    except Exception as e:
-        st.error(f"❌ Supabase connection failed: {e}")
-        st.info("💡 Add Supabase credentials to .streamlit/secrets.toml")
-        return None
-
-# Global Supabase client
-supabase: Client = init_supabase()
-
-st.set_page_config(page_title="CLC Behaviour Support - DEMO", page_icon="📊", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="CLC Behaviour Support", page_icon="📊", layout="wide", initial_sidebar_state="collapsed")
 
 # MINIMALIST PROFESSIONAL STYLING
 st.markdown("""
@@ -89,37 +65,31 @@ st.markdown("""
 
 # MOCK DATA
 MOCK_STAFF = [
-    {"id": "s1", "first_name": "Emily", "last_name": "Jones", "name": "Emily Jones", "role": "TSS", "program": "JP", "email": "emily.jones@example.com", "password": "demo123"},
-    {"id": "s2", "first_name": "Daniel", "last_name": "Lee", "name": "Daniel Lee", "role": "TSS", "program": "PY", "email": "daniel.lee@example.com", "password": "demo123"},
-    {"id": "s3", "first_name": "Sarah", "last_name": "Chen", "name": "Sarah Chen", "role": "TSS", "program": "SY", "email": "sarah.chen@example.com", "password": "demo123"},
-    {"id": "s4", "first_name": "Admin", "last_name": "User", "name": "Admin User", "role": "ADM", "email": "admin@example.com", "password": "admin123"},
-    {"id": "s5", "first_name": "Michael", "last_name": "Roberts", "name": "Michael Roberts", "role": "Leader", "program": "JP", "email": "michael.roberts@example.com", "password": "demo123"},
-    {"id": "s6", "first_name": "Jennifer", "last_name": "Walsh", "name": "Jennifer Walsh", "role": "Leader", "program": "PY", "email": "jennifer.walsh@example.com", "password": "demo123"},
+    {"id": "s1", "name": "Emily Jones", "role": "JP", "email": "emily.jones@example.com", "password": "demo123"},
+    {"id": "s2", "name": "Daniel Lee", "role": "PY", "email": "daniel.lee@example.com", "password": "demo123"},
+    {"id": "s3", "name": "Sarah Chen", "role": "SY", "email": "sarah.chen@example.com", "password": "demo123"},
+    {"id": "s4", "name": "Admin User", "role": "ADM", "email": "admin@example.com", "password": "admin123"},
 ]
 
-# Demo students - 2 per program (6 total)
 MOCK_STUDENTS = [
-    # Junior Primary (JP) - 2 students
-    {"id": "stu_jp1", "first_name": "Emma", "last_name": "Thompson", "name": "Emma Thompson", 
-     "grade": "R", "dob": "2018-05-30", "program": "JP", 
+    {"id": "stu_jp1", "name": "Emma T.", "grade": "R", "dob": "2018-05-30", "program": "JP", 
      "edid": "ED123456", "placement_start": "2024-02-01", "placement_end": None},
-    {"id": "stu_jp2", "first_name": "Oliver", "last_name": "Smith", "name": "Oliver Smith", 
-     "grade": "Y1", "dob": "2017-09-12", "program": "JP",
+    {"id": "stu_jp2", "name": "Oliver S.", "grade": "Y1", "dob": "2017-09-12", "program": "JP",
      "edid": "ED234567", "placement_start": "2024-03-15", "placement_end": None},
-    # Primary Years (PY) - 2 students
-    {"id": "stu_py1", "first_name": "Liam", "last_name": "Carter", "name": "Liam Carter", 
-     "grade": "Y3", "dob": "2015-06-15", "program": "PY",
+    {"id": "stu_jp3", "name": "Sophie M.", "grade": "Y2", "dob": "2016-03-20", "program": "JP",
+     "edid": "ED345678", "placement_start": "2024-01-29", "placement_end": None},
+    {"id": "stu_py1", "name": "Liam C.", "grade": "Y3", "dob": "2015-06-15", "program": "PY",
      "edid": "ED456789", "placement_start": "2024-02-12", "placement_end": None},
-    {"id": "stu_py2", "first_name": "Ava", "last_name": "Robinson", "name": "Ava Robinson", 
-     "grade": "Y5", "dob": "2013-11-08", "program": "PY",
+    {"id": "stu_py2", "name": "Ava R.", "grade": "Y4", "dob": "2014-11-08", "program": "PY",
      "edid": "ED567890", "placement_start": "2024-01-08", "placement_end": None},
-    # Senior Years (SY) - 2 students
-    {"id": "stu_sy1", "first_name": "Isabella", "last_name": "Garcia", "name": "Isabella Garcia", 
-     "grade": "Y7", "dob": "2011-04-17", "program": "SY",
+    {"id": "stu_py3", "name": "Noah B.", "grade": "Y6", "dob": "2012-02-28", "program": "PY",
+     "edid": "ED678901", "placement_start": "2024-04-03", "placement_end": None},
+    {"id": "stu_sy1", "name": "Isabella G.", "grade": "Y7", "dob": "2011-04-17", "program": "SY",
      "edid": "ED789012", "placement_start": "2024-01-29", "placement_end": None},
-    {"id": "stu_sy2", "first_name": "Ethan", "last_name": "Davis", "name": "Ethan Davis", 
-     "grade": "Y9", "dob": "2009-12-03", "program": "SY",
+    {"id": "stu_sy2", "name": "Ethan D.", "grade": "Y9", "dob": "2009-12-03", "program": "SY",
      "edid": "ED890123", "placement_start": "2024-02-26", "placement_end": None},
+    {"id": "stu_sy3", "name": "Mia A.", "grade": "Y11", "dob": "2007-08-20", "program": "SY",
+     "edid": "ED901234", "placement_start": "2024-03-11", "placement_end": None},
 ]
 
 PROGRAM_NAMES = {"JP": "Junior Primary", "PY": "Primary Years", "SY": "Senior Years"}
@@ -172,218 +142,11 @@ ANTECEDENTS = [
 INTERVENTIONS = ["CPI Supportive stance", "Offered break", "Reduced demand", "Provided choices", 
                 "Removed audience", "Visual supports", "Co-regulation", "Prompted coping skill", "Redirection"]
 LOCATIONS = ["JP Classroom", "PY Classroom", "SY Classroom", "Playground", "Library", "Office", "Student Gate", "Toilets"]
-VALID_PAGES = ["login", "landing", "program_students", "incident_log", "critical_incident", "student_analysis", "admin_portal"]
+VALID_PAGES = ["login", "landing", "program_students", "incident_log", "critical_incident", "student_analysis", "student_dashboard", "admin_portal"]
 
 # AI HYPOTHESIS SYSTEM
 HYPOTHESIS_FUNCTIONS = ["To get", "To avoid"]
 HYPOTHESIS_ITEMS = ["Tangible", "Activity", "Sensory", "Attention"]
-
-# AUSTRALIAN CURRICULUM GENERAL CAPABILITIES
-# These capabilities are developed across all learning areas
-AC_CAPABILITIES = {
-    "PSC": {
-        "name": "Personal and Social Capability",
-        "elements": {
-            "Self-awareness": ["Recognise emotions", "Recognise personal qualities and achievements", "Understand themselves as learners", "Develop reflective practice"],
-            "Self-management": ["Express emotions appropriately", "Develop self-discipline and set goals", "Work independently and show initiative", "Become confident, resilient and adaptable"],
-            "Social awareness": ["Appreciate diverse perspectives", "Contribute to civil society", "Understand relationships"],
-            "Social management": ["Communicate effectively", "Work collaboratively", "Make decisions", "Negotiate and resolve conflict", "Develop leadership skills"]
-        },
-        "color": "#4A90A4"
-    },
-    "CCT": {
-        "name": "Critical and Creative Thinking",
-        "elements": {
-            "Inquiring": ["Identify, explore and organise information and ideas", "Pose questions"],
-            "Generating": ["Generate ideas, possibilities and actions", "Consider alternatives"],
-            "Analysing": ["Analyse, synthesise and evaluate reasoning and procedures"],
-            "Reflecting": ["Reflect on thinking and processes", "Apply logic and reasoning"]
-        },
-        "color": "#6BB9A0"
-    },
-    "EU": {
-        "name": "Ethical Understanding",
-        "elements": {
-            "Understanding": ["Recognise ethical concepts", "Explore ethical issues"],
-            "Reasoning": ["Reason and make ethical decisions"],
-            "Acting": ["Consider consequences", "Reflect on ethical action"]
-        },
-        "color": "#E8B960"
-    },
-    "ICU": {
-        "name": "Intercultural Understanding",
-        "elements": {
-            "Recognising": ["Recognise culture and develop respect"],
-            "Interacting": ["Interact and empathise with others"],
-            "Reflecting": ["Reflect on intercultural experiences and take responsibility"]
-        },
-        "color": "#D4A574"
-    }
-}
-
-# Behaviour to AC Capability Mapping
-BEHAVIOUR_AC_MAPPING = {
-    "Verbal Refusal": {
-        "primary": "PSC",
-        "elements": ["Self-management", "Social management"],
-        "skills_to_develop": [
-            "Express emotions appropriately",
-            "Communicate effectively",
-            "Negotiate and resolve conflict"
-        ],
-        "ac_descriptors": [
-            "Persist in the face of difficulty",
-            "Express feelings and opinions appropriately",
-            "Work toward shared goals"
-        ]
-    },
-    "Elopement": {
-        "primary": "PSC",
-        "elements": ["Self-awareness", "Self-management"],
-        "skills_to_develop": [
-            "Recognise emotions",
-            "Develop self-discipline and set goals",
-            "Become confident, resilient and adaptable"
-        ],
-        "ac_descriptors": [
-            "Identify and express a range of emotions",
-            "Identify personal strengths and challenges",
-            "Persist when faced with challenges"
-        ]
-    },
-    "Property Destruction": {
-        "primary": "PSC",
-        "elements": ["Self-management", "Social awareness"],
-        "skills_to_develop": [
-            "Express emotions appropriately",
-            "Understand relationships",
-            "Appreciate diverse perspectives"
-        ],
-        "ac_descriptors": [
-            "Control impulses and reactions",
-            "Consider points of view of others",
-            "Identify the effects of actions on others"
-        ]
-    },
-    "Aggression (Peer)": {
-        "primary": "PSC",
-        "elements": ["Social management", "Social awareness"],
-        "skills_to_develop": [
-            "Negotiate and resolve conflict",
-            "Communicate effectively",
-            "Understand relationships"
-        ],
-        "ac_descriptors": [
-            "Use problem-solving skills to resolve conflict",
-            "Consider points of view of others",
-            "Develop strategies to manage conflict"
-        ]
-    },
-    "Aggression (Adult)": {
-        "primary": "PSC",
-        "elements": ["Self-management", "Social management"],
-        "skills_to_develop": [
-            "Express emotions appropriately",
-            "Communicate effectively",
-            "Develop self-discipline and set goals"
-        ],
-        "ac_descriptors": [
-            "Express strong emotions appropriately",
-            "Develop positive relationships with adults",
-            "Respond appropriately to guidance"
-        ]
-    },
-    "Self-Harm": {
-        "primary": "PSC",
-        "elements": ["Self-awareness", "Self-management"],
-        "skills_to_develop": [
-            "Recognise emotions",
-            "Become confident, resilient and adaptable",
-            "Develop reflective practice"
-        ],
-        "ac_descriptors": [
-            "Identify and express emotions in safe ways",
-            "Develop coping strategies",
-            "Seek help when needed"
-        ]
-    },
-    "Verbal Aggression": {
-        "primary": "PSC",
-        "elements": ["Self-management", "Social management"],
-        "skills_to_develop": [
-            "Express emotions appropriately",
-            "Communicate effectively",
-            "Negotiate and resolve conflict"
-        ],
-        "ac_descriptors": [
-            "Use respectful language",
-            "Express disagreement appropriately",
-            "Consider impact of words on others"
-        ]
-    },
-    "Other": {
-        "primary": "PSC",
-        "elements": ["Self-awareness", "Self-management"],
-        "skills_to_develop": [
-            "Recognise emotions",
-            "Express emotions appropriately",
-            "Develop self-discipline and set goals"
-        ],
-        "ac_descriptors": [
-            "Identify triggers and patterns",
-            "Develop self-regulation strategies",
-            "Set and work toward personal goals"
-        ]
-    }
-}
-
-# Antecedent to AC Skills Connection
-ANTECEDENT_AC_SKILLS = {
-    "Peer": {
-        "capability": "PSC",
-        "focus_elements": ["Social awareness", "Social management"],
-        "teaching_priority": ["Perspective-taking", "Conflict resolution", "Emotional regulation in social contexts"]
-    },
-    "Transition": {
-        "capability": "PSC", 
-        "focus_elements": ["Self-management", "Self-awareness"],
-        "teaching_priority": ["Flexibility", "Coping with change", "Self-regulation"]
-    },
-    "Instructions": {
-        "capability": "PSC",
-        "focus_elements": ["Self-management", "Social management"],
-        "teaching_priority": ["Following routines", "Responding to guidance", "Task completion"]
-    },
-    "Engagement": {
-        "capability": "CCT",
-        "focus_elements": ["Reflecting", "Generating"],
-        "teaching_priority": ["Persistence", "Problem-solving", "Growth mindset"]
-    },
-    "Sensory": {
-        "capability": "PSC",
-        "focus_elements": ["Self-awareness", "Self-management"],
-        "teaching_priority": ["Body awareness", "Self-advocacy", "Regulation strategies"]
-    },
-    "Other": {
-        "capability": "PSC",
-        "focus_elements": ["Self-awareness", "Self-management"],
-        "teaching_priority": ["Emotional literacy", "Help-seeking", "Coping strategies"]
-    }
-}
-
-# CONSISTENT COLOUR SCHEME FOR GRAPHS
-CHART_COLORS = {
-    "primary": "#008080",      # Teal
-    "secondary": "#228B22",    # Forest Green  
-    "accent": "#4682B4",       # Steel Blue
-    "warning": "#DC3545",      # Red
-    "success": "#28A745",      # Green
-    "neutral": "#6C757D",      # Gray
-    "light": "#E8F4F8",        # Light teal
-    "regular_incident": "#4A90A4",   # Teal-blue for regular incidents
-    "critical_incident": "#DC3545",  # Red for critical incidents
-    "gradient": ["#008080", "#20B2AA", "#48D1CC", "#7FFFD4"]  # Teal gradient
-}
 
 def format_time_12hr(time_str):
     """Convert 24hr time string to 12hr format"""
@@ -395,17 +158,6 @@ def format_time_12hr(time_str):
         return dt.strftime("%I:%M %p")
     except:
         return time_str
-
-def format_date_dmy(date_str):
-    """Convert date to DD/MM/YYYY format"""
-    try:
-        if isinstance(date_str, str):
-            dt = datetime.strptime(date_str, "%Y-%m-%d")
-        else:
-            dt = date_str
-        return dt.strftime("%d/%m/%Y")
-    except:
-        return date_str
 
 def generate_hypothesis(antecedent, behaviour, consequence):
     """Auto-generate hypothesis based on ABC data"""
@@ -555,321 +307,175 @@ def format_hypothesis(hyp):
     else:
         return "Unknown"
 
-def get_ac_capability_for_behaviour(behaviour_type):
-    """Get Australian Curriculum capability information for a behaviour type"""
-    if behaviour_type in BEHAVIOUR_AC_MAPPING:
-        mapping = BEHAVIOUR_AC_MAPPING[behaviour_type]
-        capability_code = mapping["primary"]
-        capability_info = AC_CAPABILITIES.get(capability_code, {})
-        return {
-            "code": capability_code,
-            "name": capability_info.get("name", ""),
-            "elements": mapping["elements"],
-            "skills_to_develop": mapping["skills_to_develop"],
-            "ac_descriptors": mapping["ac_descriptors"],
-            "color": capability_info.get("color", "#4A90A4")
-        }
-    return None
-
-def get_ac_skills_for_antecedent(antecedent):
-    """Get AC skill focus based on antecedent category"""
-    # Determine antecedent category from the full antecedent string
-    ant_lower = antecedent.lower() if antecedent else ""
-    
-    category = "Other"
-    if "peer" in ant_lower:
-        category = "Peer"
-    elif "transition" in ant_lower:
-        category = "Transition"
-    elif "instruction" in ant_lower:
-        category = "Instructions"
-    elif "engagement" in ant_lower or "demand" in ant_lower or "task" in ant_lower:
-        category = "Engagement"
-    elif "sensory" in ant_lower:
-        category = "Sensory"
-    
-    if category in ANTECEDENT_AC_SKILLS:
-        skills = ANTECEDENT_AC_SKILLS[category]
-        capability_info = AC_CAPABILITIES.get(skills["capability"], {})
-        return {
-            "category": category,
-            "capability_code": skills["capability"],
-            "capability_name": capability_info.get("name", ""),
-            "focus_elements": skills["focus_elements"],
-            "teaching_priority": skills["teaching_priority"],
-            "color": capability_info.get("color", "#4A90A4")
-        }
-    return None
-
-def generate_ac_learning_goals(behaviour_type, antecedent, grade):
-    """Generate AC-aligned learning goals based on behaviour and grade level"""
-    beh_mapping = BEHAVIOUR_AC_MAPPING.get(behaviour_type, BEHAVIOUR_AC_MAPPING["Other"])
-    
-    # Adjust complexity based on grade
-    try:
-        grade_num = int(grade.replace("Y", "").replace("R", "0"))
-    except:
-        grade_num = 3  # Default to middle primary
-    
-    # Generate grade-appropriate goals
-    if grade_num <= 2:  # Foundation to Year 2
-        complexity = "foundational"
-        verbs = ["identify", "recognise", "begin to use", "with support"]
-    elif grade_num <= 4:  # Years 3-4
-        complexity = "developing"
-        verbs = ["describe", "demonstrate", "use", "with guidance"]
-    elif grade_num <= 6:  # Years 5-6
-        complexity = "consolidating"
-        verbs = ["explain", "apply", "independently use", "evaluate"]
-    else:  # Years 7+
-        complexity = "extending"
-        verbs = ["analyse", "critically reflect", "independently demonstrate", "adapt"]
-    
-    goals = []
-    for i, skill in enumerate(beh_mapping["skills_to_develop"][:3]):
-        verb = verbs[i % len(verbs)]
-        goals.append({
-            "skill": skill,
-            "goal": f"Student will {verb} {skill.lower()}",
-            "ac_descriptor": beh_mapping["ac_descriptors"][i] if i < len(beh_mapping["ac_descriptors"]) else "",
-            "complexity": complexity
-        })
-    
-    return goals
-
-def get_intervention_ac_alignment(interventions):
-    """Map interventions to AC capability development"""
-    intervention_ac_map = {
-        "CPI Supportive stance": {
-            "capability": "PSC",
-            "element": "Relationship/Self-management",
-            "supports": "Co-regulation and safety"
-        },
-        "Offered break": {
-            "capability": "PSC",
-            "element": "Self-management",
-            "supports": "Self-regulation and body awareness"
-        },
-        "Reduced demand": {
-            "capability": "PSC",
-            "element": "Self-management",
-            "supports": "Building stamina gradually"
-        },
-        "Provided choices": {
-            "capability": "PSC",
-            "element": "Self-management/Social management",
-            "supports": "Agency and decision-making"
-        },
-        "Removed audience": {
-            "capability": "PSC",
-            "element": "Social awareness",
-            "supports": "Dignity and self-awareness"
-        },
-        "Visual supports": {
-            "capability": "CCT",
-            "element": "Analysing/Reflecting",
-            "supports": "Processing and understanding expectations"
-        },
-        "Co-regulation": {
-            "capability": "PSC",
-            "element": "Self-management/Social awareness",
-            "supports": "Emotional regulation through relationship"
-        },
-        "Prompted coping skill": {
-            "capability": "PSC",
-            "element": "Self-management",
-            "supports": "Building independent regulation"
-        },
-        "Redirection": {
-            "capability": "CCT",
-            "element": "Generating/Analysing",
-            "supports": "Flexible thinking and alternatives"
-        }
-    }
-    
-    alignments = []
-    if isinstance(interventions, list):
-        for intervention in interventions:
-            if intervention in intervention_ac_map:
-                alignments.append({
-                    "intervention": intervention,
-                    **intervention_ac_map[intervention]
-                })
-    return alignments
-
 def show_severity_guide():
     """Enhanced Behaviour Severity Continuum matching uploaded image"""
-    import streamlit.components.v1 as components
-    
-    html_content = """<div style='background: white; padding: 1.5rem; border-radius: 8px; margin: 1rem 0; 
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0;
-            font-family: "Source Sans Pro", sans-serif;'>
-    
-    <div style='text-align: center; margin-bottom: 1.5rem;'>
-        <h2 style='color: #1a1a1a; font-weight: 700; font-size: 1.8rem; margin: 0;'>
-            Behaviour Severity Continuum
-        </h2>
-    </div>
-    
-    <div style='display: grid; grid-template-columns: repeat(5, 1fr); gap: 0;'>
+    st.markdown("""
+    <div style='background: white; padding: 1.5rem; border-radius: 8px; margin: 1rem 0; 
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0;'>
         
-        <div style='background: #81b29a; padding: 1.2rem 0.8rem; border-right: 2px solid white;'>
-            <div style='text-align: center; margin-bottom: 1rem;'>
-                <div style='color: white; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem;'>Level 1</div>
-                <div style='color: white; font-weight: 600; font-size: 0.9rem; line-height: 1.3;'>
-                    Low Level /<br>Engaged
-                </div>
-            </div>
-            <div style='background: rgba(255,255,255,0.2); padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem;'>
-                <div style='color: white; font-weight: 600; font-size: 0.75rem; margin-bottom: 0.4rem;'>Examples:</div>
-                <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                    <li>Following instructions</li>
-                    <li>On task</li>
-                    <li>Minor defiance</li>
-                    <li>Avoiding work</li>
-                    <li>Answering back</li>
-                    <li>Mumbling, huffing</li>
-                    <li>Passive peer conflict</li>
-                    <li>Attention seeking</li>
-                </ul>
-            </div>
-            <div style='background: #6b9b7f; padding: 0.6rem; border-radius: 4px; margin-bottom: 0.5rem;'>
-                <div style='color: white; font-weight: 700; font-size: 0.75rem; text-align: center;'>Teacher Priority</div>
-            </div>
-            <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                <li>Redirect / provide options</li>
-                <li>Give space</li>
-                <li>Offer choice</li>
-                <li>Acknowledge concern</li>
-                <li>Maintain routine</li>
-                <li>Active listening</li>
-            </ul>
+        <div style='text-align: center; margin-bottom: 1.5rem;'>
+            <h2 style='color: #1a1a1a; font-weight: 700; font-size: 1.8rem; margin: 0;'>
+                Behaviour Severity Continuum
+            </h2>
         </div>
         
-        <div style='background: #f4d35e; padding: 1.2rem 0.8rem; border-right: 2px solid white;'>
-            <div style='text-align: center; margin-bottom: 1rem;'>
-                <div style='color: #2c2c2c; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem;'>Level 2</div>
-                <div style='color: #2c2c2c; font-weight: 600; font-size: 0.9rem; line-height: 1.3;'>
-                    Escalating /<br>Dysregulated
+        <div style='display: grid; grid-template-columns: repeat(5, 1fr); gap: 0;'>
+            
+            <div style='background: #81b29a; padding: 1.2rem 0.8rem; border-right: 2px solid white;'>
+                <div style='text-align: center; margin-bottom: 1rem;'>
+                    <div style='color: white; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem;'>Level 1</div>
+                    <div style='color: white; font-weight: 600; font-size: 0.9rem; line-height: 1.3;'>
+                        Low Level /<br>Engaged
+                    </div>
                 </div>
+                <div style='background: rgba(255,255,255,0.2); padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem;'>
+                    <div style='color: white; font-weight: 600; font-size: 0.75rem; margin-bottom: 0.4rem;'>Examples:</div>
+                    <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
+                        <li>Following instructions</li>
+                        <li>On task</li>
+                        <li>Minor defiance</li>
+                        <li>Avoiding work</li>
+                        <li>Answering back</li>
+                        <li>Mumbling, huffing</li>
+                        <li>Passive peer conflict</li>
+                        <li>Attention seeking</li>
+                    </ul>
+                </div>
+                <div style='background: #6b9b7f; padding: 0.6rem; border-radius: 4px; margin-bottom: 0.5rem;'>
+                    <div style='color: white; font-weight: 700; font-size: 0.75rem; text-align: center;'>Teacher Priority</div>
+                </div>
+                <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
+                    <li>Redirect / provide options</li>
+                    <li>Give space</li>
+                    <li>Offer choice</li>
+                    <li>Acknowledge concern</li>
+                    <li>Maintain routine</li>
+                    <li>Active listening</li>
+                </ul>
             </div>
-            <div style='background: rgba(255,255,255,0.3); padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem;'>
-                <div style='color: #2c2c2c; font-weight: 600; font-size: 0.75rem; margin-bottom: 0.4rem;'>Examples:</div>
+            
+            <div style='background: #f4d35e; padding: 1.2rem 0.8rem; border-right: 2px solid white;'>
+                <div style='text-align: center; margin-bottom: 1rem;'>
+                    <div style='color: #2c2c2c; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem;'>Level 2</div>
+                    <div style='color: #2c2c2c; font-weight: 600; font-size: 0.9rem; line-height: 1.3;'>
+                        Escalating /<br>Dysregulated
+                    </div>
+                </div>
+                <div style='background: rgba(255,255,255,0.3); padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem;'>
+                    <div style='color: #2c2c2c; font-weight: 600; font-size: 0.75rem; margin-bottom: 0.4rem;'>Examples:</div>
+                    <ul style='color: #2c2c2c; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
+                        <li>Raised voice</li>
+                        <li>Arguing, blaming</li>
+                        <li>Crying, frustration</li>
+                        <li>Pacing or mild exit attempts</li>
+                        <li>Throwing soft items (not dangerous)</li>
+                    </ul>
+                </div>
+                <div style='background: #d9b84d; padding: 0.6rem; border-radius: 4px; margin-bottom: 0.5rem;'>
+                    <div style='color: #2c2c2c; font-weight: 700; font-size: 0.75rem; text-align: center;'>Teacher Priority</div>
+                </div>
                 <ul style='color: #2c2c2c; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                    <li>Raised voice</li>
-                    <li>Arguing, blaming</li>
-                    <li>Crying, frustration</li>
-                    <li>Pacing or mild exit attempts</li>
-                    <li>Throwing soft items (not dangerous)</li>
+                    <li>Reduce demands</li>
+                    <li>Offer space / movement break</li>
+                    <li>Provide limited choices</li>
+                    <li>Avoid power struggles</li>
                 </ul>
             </div>
-            <div style='background: #d9b84d; padding: 0.6rem; border-radius: 4px; margin-bottom: 0.5rem;'>
-                <div style='color: #2c2c2c; font-weight: 700; font-size: 0.75rem; text-align: center;'>Teacher Priority</div>
-            </div>
-            <ul style='color: #2c2c2c; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                <li>Reduce demands</li>
-                <li>Offer space / movement break</li>
-                <li>Provide limited choices</li>
-                <li>Avoid power struggles</li>
-            </ul>
-        </div>
-        
-        <div style='background: #ee8434; padding: 1.2rem 0.8rem; border-right: 2px solid white;'>
-            <div style='text-align: center; margin-bottom: 1rem;'>
-                <div style='color: white; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem;'>Level 3</div>
-                <div style='color: white; font-weight: 600; font-size: 0.9rem; line-height: 1.3;'>
-                    High Escalation /<br>Significant Risk
+            
+            <div style='background: #ee8434; padding: 1.2rem 0.8rem; border-right: 2px solid white;'>
+                <div style='text-align: center; margin-bottom: 1rem;'>
+                    <div style='color: white; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem;'>Level 3</div>
+                    <div style='color: white; font-weight: 600; font-size: 0.9rem; line-height: 1.3;'>
+                        High Escalation /<br>Significant Risk
+                    </div>
                 </div>
-            </div>
-            <div style='background: rgba(255,255,255,0.2); padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem;'>
-                <div style='color: white; font-weight: 600; font-size: 0.75rem; margin-bottom: 0.4rem;'>Examples:</div>
-                <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                    <li>Yelling, swearing</li>
-                    <li>Slammed doors, hitting walls</li>
-                    <li>Throwing items with possible risk</li>
-                    <li>Attempting to run off</li>
-                    <li>Damaging property</li>
-                </ul>
-            </div>
-            <div style='background: #d47230; padding: 0.6rem; border-radius: 4px; margin-bottom: 0.5rem;'>
-                <div style='color: white; font-weight: 700; font-size: 0.75rem; text-align: center;'>Teacher Priority</div>
-            </div>
-            <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                <li>Increase distance</li>
-                <li>Notify leadership/support</li>
-                <li>Remove audience</li>
-                <li>Complete Critical Incident Form</li>
-            </ul>
-        </div>
-        
-        <div style='background: #c9555e; padding: 1.2rem 0.8rem; border-right: 2px solid white;'>
-            <div style='text-align: center; margin-bottom: 1rem;'>
-                <div style='color: white; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem;'>Level 4</div>
-                <div style='color: white; font-weight: 600; font-size: 0.9rem; line-height: 1.3;'>
-                    Dangerous<br>Behaviour
+                <div style='background: rgba(255,255,255,0.2); padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem;'>
+                    <div style='color: white; font-weight: 600; font-size: 0.75rem; margin-bottom: 0.4rem;'>Examples:</div>
+                    <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
+                        <li>Yelling, swearing</li>
+                        <li>Slammed doors, hitting walls</li>
+                        <li>Throwing items with possible risk</li>
+                        <li>Attempting to run off</li>
+                        <li>Damaging property</li>
+                    </ul>
                 </div>
-            </div>
-            <div style='background: rgba(255,255,255,0.2); padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem;'>
-                <div style='color: white; font-weight: 600; font-size: 0.75rem; margin-bottom: 0.4rem;'>Examples:</div>
-                <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                    <li>Attempts to hit, kick, grab</li>
-                    <li>Throwing dangerous objects</li>
-                    <li>Threats of violence</li>
-                    <li>Absconding into unsafe situations</li>
-                    <li>Beginning self-harm behaviour</li>
-                </ul>
-            </div>
-            <div style='background: #b04850; padding: 0.6rem; border-radius: 4px; margin-bottom: 0.5rem;'>
-                <div style='color: white; font-weight: 700; font-size: 0.75rem; text-align: center;'>Teacher Priority</div>
-            </div>
-            <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                <li>Evacuate nearby students</li>
-                <li>Leadership/response team activated</li>
-                <li>Maintain safety distance</li>
-            </ul>
-        </div>
-        
-        <div style='background: #7d2e2e; padding: 1.2rem 0.8rem;'>
-            <div style='text-align: center; margin-bottom: 1rem;'>
-                <div style='color: white; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem;'>Crisis</div>
-                <div style='color: white; font-weight: 600; font-size: 0.9rem; line-height: 1.3;'>
-                    Crisis<br>Situation
+                <div style='background: #d47230; padding: 0.6rem; border-radius: 4px; margin-bottom: 0.5rem;'>
+                    <div style='color: white; font-weight: 700; font-size: 0.75rem; text-align: center;'>Teacher Priority</div>
                 </div>
-            </div>
-            <div style='background: rgba(255,255,255,0.15); padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem;'>
-                <div style='color: white; font-weight: 600; font-size: 0.75rem; margin-bottom: 0.4rem;'>Examples:</div>
                 <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                    <li>Physical violence causing or likely to cause injury</li>
-                    <li>Severe self-harm</li>
-                    <li>Use of weapons or dangerous items</li>
-                    <li>Full loss of control behaviour</li>
+                    <li>Increase distance</li>
+                    <li>Notify leadership/support</li>
+                    <li>Remove audience</li>
+                    <li>Complete Critical Incident Form</li>
                 </ul>
             </div>
-            <div style='background: #5c2323; padding: 0.6rem; border-radius: 4px; margin-bottom: 0.5rem;'>
-                <div style='color: white; font-weight: 700; font-size: 0.75rem; text-align: center;'>Teacher Priority</div>
+            
+            <div style='background: #c9555e; padding: 1.2rem 0.8rem; border-right: 2px solid white;'>
+                <div style='text-align: center; margin-bottom: 1rem;'>
+                    <div style='color: white; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem;'>Level 4</div>
+                    <div style='color: white; font-weight: 600; font-size: 0.9rem; line-height: 1.3;'>
+                        Dangerous<br>Behaviour
+                    </div>
+                </div>
+                <div style='background: rgba(255,255,255,0.2); padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem;'>
+                    <div style='color: white; font-weight: 600; font-size: 0.75rem; margin-bottom: 0.4rem;'>Examples:</div>
+                    <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
+                        <li>Attempts to hit, kick, grab</li>
+                        <li>Throwing dangerous objects</li>
+                        <li>Threats of violence</li>
+                        <li>Absconding into unsafe situations</li>
+                        <li>Beginning self-harm behaviour</li>
+                    </ul>
+                </div>
+                <div style='background: #b04850; padding: 0.6rem; border-radius: 4px; margin-bottom: 0.5rem;'>
+                    <div style='color: white; font-weight: 700; font-size: 0.75rem; text-align: center;'>Teacher Priority</div>
+                </div>
+                <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
+                    <li>Evacuate nearby students</li>
+                    <li>Leadership/response team activated</li>
+                    <li>Maintain safety distance</li>
+                </ul>
             </div>
-            <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                <li>Immediate emergency response</li>
-                <li>Trained staff to manage situation</li>
-                <li>Preserve evidence</li>
-                <li>Complete Critical Incident Form</li>
-            </ul>
+            
+            <div style='background: #7d2e2e; padding: 1.2rem 0.8rem;'>
+                <div style='text-align: center; margin-bottom: 1rem;'>
+                    <div style='color: white; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem;'>Crisis</div>
+                    <div style='color: white; font-weight: 600; font-size: 0.9rem; line-height: 1.3;'>
+                        Crisis<br>Situation
+                    </div>
+                </div>
+                <div style='background: rgba(255,255,255,0.15); padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem;'>
+                    <div style='color: white; font-weight: 600; font-size: 0.75rem; margin-bottom: 0.4rem;'>Examples:</div>
+                    <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
+                        <li>Physical violence causing or likely to cause injury</li>
+                        <li>Severe self-harm</li>
+                        <li>Use of weapons or dangerous items</li>
+                        <li>Full loss of control behaviour</li>
+                    </ul>
+                </div>
+                <div style='background: #5c2323; padding: 0.6rem; border-radius: 4px; margin-bottom: 0.5rem;'>
+                    <div style='color: white; font-weight: 700; font-size: 0.75rem; text-align: center;'>Teacher Priority</div>
+                </div>
+                <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
+                    <li>Immediate emergency response</li>
+                    <li>Trained staff to manage situation</li>
+                    <li>Preserve evidence</li>
+                    <li>Complete Critical Incident Form</li>
+                </ul>
+            </div>
+            
         </div>
         
-    </div>
-
-    <div style='margin-top: 1.5rem; padding: 1rem; background: #fff3cd; border-radius: 6px; border-left: 4px solid #f59e0b;'>
-        <div style='color: #92400e; font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem;'>
-            WARNING: Critical Incident Documentation Required
-        </div>
-        <div style='color: #92400e; font-size: 0.85rem; line-height: 1.5;'>
-            <strong>Level 3 or above</strong> requires a Critical Incident ABCH Form to be completed immediately after the incident is resolved.
+        <div style='margin-top: 1.5rem; padding: 1rem; background: #fff3cd; border-radius: 6px; border-left: 4px solid #f59e0b;'>
+            <div style='color: #92400e; font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem;'>
+                WARNING: Critical Incident Documentation Required
+            </div>
+            <div style='color: #92400e; font-size: 0.85rem; line-height: 1.5;'>
+                <strong>Level 3 or above</strong> requires a Critical Incident ABCH Form to be completed immediately after the incident is resolved.
+            </div>
         </div>
     </div>
-</div>
-"""
-    components.html(html_content, height=700, scrolling=True)
-    
+    """, unsafe_allow_html=True)
 def send_critical_incident_email(incident_data, student, staff_email, leader_email, admin_email):
     """Send email notification to all parties"""
     st.info(f"""📧 **Email Notification Sent**
@@ -888,1068 +494,684 @@ Admin summary included for departmental log.
 
 
 def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, top_loc, top_session, risk_score, risk_level):
-    """Generate PROFESSIONAL Behaviour Analysis Plan with enhanced formatting"""
+    """Generate comprehensive BAP with matplotlib graphs (no Chrome/Kaleido needed)"""
     try:
         from docx import Document
-        from docx.shared import Inches, Pt, RGBColor, Cm, Twips
-        from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
-        from docx.enum.table import WD_TABLE_ALIGNMENT, WD_CELL_VERTICAL_ALIGNMENT
-        from docx.enum.style import WD_STYLE_TYPE
-        from docx.oxml.ns import qn, nsdecls
-        from docx.oxml import parse_xml
+        from docx.shared import Inches, Pt, RGBColor
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
         import matplotlib.pyplot as plt
         import matplotlib
         matplotlib.use('Agg')
-        from matplotlib.ticker import MaxNLocator
-        import numpy as np
         
-        # Color scheme - Professional teal/green theme
-        PRIMARY_COLOR = RGBColor(0, 128, 128)      # Teal
-        SECONDARY_COLOR = RGBColor(34, 139, 34)    # Forest Green
-        ACCENT_COLOR = RGBColor(70, 130, 180)      # Steel Blue
-        DARK_TEXT = RGBColor(33, 37, 41)           # Dark gray
-        LIGHT_BG = RGBColor(248, 249, 250)         # Light gray
-        WARNING_COLOR = RGBColor(220, 53, 69)      # Red for high risk
-        SUCCESS_COLOR = RGBColor(40, 167, 69)      # Green for low risk
+        # ARIAL FONT SETUP
+        from docx.oxml.ns import qn
+        
+        def set_arial(run):
+            """Set Arial font for a run"""
+            run.font.name = 'Arial'
+            run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Arial')
+        
+        # GREEN COLOR for headings
+        GREEN_RGB = RGBColor(34, 139, 34)
+        
         
         PROGRAM_NAMES = {"JP": "Junior Primary", "PY": "Primary Years", "SY": "Senior Years"}
         
         doc = Document()
         
-        # ================================================================
-        # DOCUMENT STYLES SETUP
-        # ================================================================
-        
-        def set_arial(run, size=11):
-            """Set Arial font for a run"""
-            run.font.name = 'Arial'
-            run.font.size = Pt(size)
-            run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Arial')
-        
-        # Set default styles
+        # Set default font to Arial
         style = doc.styles['Normal']
         font = style.font
         font.name = 'Arial'
-        font.size = Pt(11)
         style.element.rPr.rFonts.set(qn('w:eastAsia'), 'Arial')
         
-        # Modify heading styles
-        for i in range(1, 4):
-            heading_style = doc.styles[f'Heading {i}']
-            heading_style.font.name = 'Arial'
-            heading_style.font.color.rgb = PRIMARY_COLOR
-            heading_style.font.bold = True
+       # ====================================================================
+        # BEHAVIOUR ANALYSIS REPORT GENERATION - COMPLETE UPDATED VERSION
+        # This replaces lines 337-816 in app_supabase.py
+        # ====================================================================
         
-        def add_horizontal_line(doc):
-            """Add a horizontal line separator"""
-            p = doc.add_paragraph()
-            p.paragraph_format.space_before = Pt(6)
-            p.paragraph_format.space_after = Pt(6)
-            pBdr = parse_xml(
-                r'<w:pBdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
-                r'<w:bottom w:val="single" w:sz="6" w:space="1" w:color="008080"/>'
-                r'</w:pBdr>'
-            )
-            p._p.get_or_add_pPr().append(pBdr)
-            return p
+        # TITLE PAGE
+        heading = doc.add_heading('Behaviour Analysis Plan', 0)
+        for run in heading.runs:
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
+        heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
         
-        def create_info_box(doc, title, content, box_color="E8F4F8"):
-            """Create a colored info box"""
-            table = doc.add_table(rows=1, cols=1)
-            table.autofit = False
-            table.columns[0].width = Inches(6.5)
-            cell = table.rows[0].cells[0]
-            
-            # Set cell shading
-            shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{box_color}" w:val="clear"/>')
-            cell._tc.get_or_add_tcPr().append(shading)
-            
-            # Add title
-            title_para = cell.paragraphs[0]
-            title_run = title_para.add_run(title)
-            title_run.bold = True
-            title_run.font.size = Pt(12)
-            title_run.font.color.rgb = PRIMARY_COLOR
-            set_arial(title_run, 12)
-            
-            # Add content
-            content_para = cell.add_paragraph()
-            content_run = content_para.add_run(content)
-            set_arial(content_run, 11)
-            
-            doc.add_paragraph()  # Spacing after box
-            return table
-        
-        def create_metric_table(doc, metrics):
-            """Create a professional metrics table"""
-            cols = len(metrics)
-            table = doc.add_table(rows=2, cols=cols)
-            table.alignment = WD_TABLE_ALIGNMENT.CENTER
-            
-            for i, (label, value, color) in enumerate(metrics):
-                # Header cell
-                header_cell = table.rows[0].cells[i]
-                header_para = header_cell.paragraphs[0]
-                header_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                header_run = header_para.add_run(label)
-                header_run.bold = True
-                header_run.font.size = Pt(10)
-                header_run.font.color.rgb = DARK_TEXT
-                
-                # Value cell
-                value_cell = table.rows[1].cells[i]
-                value_para = value_cell.paragraphs[0]
-                value_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                value_run = value_para.add_run(str(value))
-                value_run.bold = True
-                value_run.font.size = Pt(18)
-                value_run.font.color.rgb = color
-                
-                # Add cell shading
-                for cell in [header_cell, value_cell]:
-                    shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="F8F9FA" w:val="clear"/>')
-                    cell._tc.get_or_add_tcPr().append(shading)
-            
-            doc.add_paragraph()
-            return table
-        
-        # ================================================================
-        # COVER PAGE
-        # ================================================================
-        
-        # Add spacing at top
-        for _ in range(3):
-            doc.add_paragraph()
-        
-        # Logo placeholder
-        logo_para = doc.add_paragraph()
-        logo_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        logo_run = logo_para.add_run("[SCHOOL LOGO]")
-        logo_run.font.size = Pt(14)
-        logo_run.font.color.rgb = RGBColor(150, 150, 150)
-        
-        doc.add_paragraph()
-        
-        # School name
-        school = doc.add_paragraph()
-        school.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        school_run = school.add_run("COWANDILLA LEARNING CENTRE")
-        school_run.bold = True
-        school_run.font.size = Pt(24)
-        school_run.font.color.rgb = PRIMARY_COLOR
-        set_arial(school_run, 24)
-        
-        # Subtitle
-        subtitle = doc.add_paragraph()
+        subtitle = doc.add_paragraph('Evidence-Based Analysis & Recommendations')
         subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        sub_run = subtitle.add_run("Learning and Behaviour Support Unit")
-        sub_run.font.size = Pt(14)
-        sub_run.font.color.rgb = DARK_TEXT
-        set_arial(sub_run, 14)
-        
-        doc.add_paragraph()
-        add_horizontal_line(doc)
-        doc.add_paragraph()
-        
-        # Main title
-        title = doc.add_paragraph()
-        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        title_run = title.add_run("BEHAVIOUR ANALYSIS PLAN")
-        title_run.bold = True
-        title_run.font.size = Pt(32)
-        title_run.font.color.rgb = SECONDARY_COLOR
-        set_arial(title_run, 32)
+        for run in subtitle.runs:
+            run.font.size = Pt(14)
+            run.font.color.rgb = RGBColor(100, 116, 139)
         
         doc.add_paragraph()
         
-        # Student name box
-        student_box = doc.add_table(rows=1, cols=1)
-        student_box.alignment = WD_TABLE_ALIGNMENT.CENTER
-        student_box.columns[0].width = Inches(4)
-        student_cell = student_box.rows[0].cells[0]
-        shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="E8F5E9" w:val="clear"/>')
-        student_cell._tc.get_or_add_tcPr().append(shading)
-        
-        student_para = student_cell.paragraphs[0]
-        student_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        student_run = student_para.add_run(student['name'].upper())
-        student_run.bold = True
-        student_run.font.size = Pt(20)
-        student_run.font.color.rgb = SECONDARY_COLOR
-        set_arial(student_run, 20)
-        
-        grade_para = student_cell.add_paragraph()
-        grade_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        grade_run = grade_para.add_run(f"{PROGRAM_NAMES.get(student['program'], student['program'])} | Grade {student['grade']}")
-        grade_run.font.size = Pt(12)
-        set_arial(grade_run, 12)
+        # Add analysis image
+        try:
+            import matplotlib
+            matplotlib.use('Agg')
+            import matplotlib.pyplot as plt
+            import matplotlib.patches as mpatches
+            from matplotlib.patches import FancyBboxPatch, Circle
+            import numpy as np
+            
+            fig, ax = plt.subplots(figsize=(6, 3), dpi=150)
+            ax.set_xlim(0, 10)
+            ax.set_ylim(0, 5)
+            ax.axis('off')
+            
+            # Background
+            ax.add_patch(FancyBboxPatch((0, 0), 10, 5, boxstyle="round,pad=0.1", 
+                                        facecolor='#f8fafc', edgecolor='#e2e8f0', linewidth=2))
+            
+            # Bar chart
+            bars_x = [1.5, 2.5, 3.5, 4.5, 5.5]
+            bars_y = [2.5, 3.2, 2.8, 3.5, 3.0]
+            for x, y in zip(bars_x, bars_y):
+                ax.add_patch(plt.Rectangle((x-0.3, 0.5), 0.6, y-0.5, 
+                                          facecolor='#3b82f6', alpha=0.7))
+            
+            # Trend line
+            line_x = np.linspace(6.5, 9.5, 50)
+            line_y = 1.5 + (line_x - 6.5) * 0.2
+            ax.plot(line_x, line_y, color='#22c55e', linewidth=3, alpha=0.8)
+            ax.scatter([6.5, 7.5, 8.5, 9.5], [1.5, 1.7, 2.1, 2.3], 
+                      s=60, color='#22c55e', zorder=5, alpha=0.8)
+            
+            # Icons
+            circle = Circle((1, 1.5), 0.4, facecolor='none', edgecolor='#0ea5e9', linewidth=3)
+            ax.add_patch(circle)
+            ax.plot([1.3, 1.6], [1.2, 0.9], color='#0ea5e9', linewidth=3)
+            
+            plt.tight_layout()
+            
+            img_stream = BytesIO()
+            plt.savefig(img_stream, format='png', dpi=150, bbox_inches='tight', 
+                       facecolor='white', edgecolor='none')
+            img_stream.seek(0)
+            plt.close()
+            
+            doc.add_picture(img_stream, width=Inches(5))
+            last_paragraph = doc.paragraphs[-1]
+            last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        except:
+            pass
         
         doc.add_paragraph()
-        doc.add_paragraph()
-        
-        # Date and classification
-        date_para = doc.add_paragraph()
-        date_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        date_run = date_para.add_run(f"Analysis Date: {datetime.now().strftime('%d %B %Y')}")
-        date_run.font.size = Pt(12)
-        set_arial(date_run, 12)
-        
-        period_para = doc.add_paragraph()
-        period_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        period_run = period_para.add_run(f"Data Period: {full_df['date_parsed'].min().strftime('%d/%m/%Y')} - {full_df['date_parsed'].max().strftime('%d/%m/%Y')}")
-        period_run.font.size = Pt(11)
-        period_run.font.color.rgb = RGBColor(100, 100, 100)
-        set_arial(period_run, 11)
-        
-        # Add spacing before confidentiality notice
-        for _ in range(4):
-            doc.add_paragraph()
-        
-        # Confidentiality notice
-        conf_box = doc.add_table(rows=1, cols=1)
-        conf_box.alignment = WD_TABLE_ALIGNMENT.CENTER
-        conf_box.columns[0].width = Inches(5.5)
-        conf_cell = conf_box.rows[0].cells[0]
-        shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="FFF3CD" w:val="clear"/>')
-        conf_cell._tc.get_or_add_tcPr().append(shading)
-        
-        conf_para = conf_cell.paragraphs[0]
-        conf_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        conf_run = conf_para.add_run("CONFIDENTIAL DOCUMENT")
-        conf_run.bold = True
-        conf_run.font.size = Pt(11)
-        conf_run.font.color.rgb = RGBColor(133, 100, 4)
-        
-        conf_para2 = conf_cell.add_paragraph()
-        conf_para2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        conf_run2 = conf_para2.add_run("This document contains sensitive student information and should be handled in accordance with privacy legislation.")
-        conf_run2.font.size = Pt(9)
-        conf_run2.font.color.rgb = RGBColor(133, 100, 4)
+        branding = doc.add_paragraph('Prepared by: Learning and Behaviour Unit')
+        branding.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        for run in branding.runs:
+            run.font.size = Pt(11)
+            run.font.bold = True
+            run.font.color.rgb = RGBColor(14, 165, 233)
         
         doc.add_page_break()
         
-        # ================================================================
-        # TABLE OF CONTENTS
-        # ================================================================
-        
-        toc_heading = doc.add_heading('Contents', 1)
-        for run in toc_heading.runs:
-            run.font.color.rgb = PRIMARY_COLOR
-            set_arial(run, 16)
-        
-        toc_items = [
-            ("1. Executive Summary", "3"),
-            ("2. Key Metrics & Risk Assessment", "3"),
-            ("3. Visual Analytics", "4"),
-            ("4. Clinical Interpretation", "7"),
-            ("5. Berry Street Education Model Framework", "8"),
-            ("6. Crisis Prevention Institute (CPI) Principles", "10"),
-            ("7. Australian Curriculum - General Capabilities", "11"),
-            ("8. Evidence-Based Recommendations", "12"),
-            ("9. Action Plan & Timeline", "13"),
-            ("10. Review Schedule", "14"),
-        ]
-        
-        toc_table = doc.add_table(rows=len(toc_items), cols=2)
-        toc_table.columns[0].width = Inches(5)
-        toc_table.columns[1].width = Inches(1)
-        
-        for i, (item, page) in enumerate(toc_items):
-            toc_table.rows[i].cells[0].paragraphs[0].add_run(item)
-            page_para = toc_table.rows[i].cells[1].paragraphs[0]
-            page_para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-            page_para.add_run(page)
+        # SCHOOL NAME HEADER
+        school_name = doc.add_heading('Cowandilla Learning Centre', 0)
+        school_name.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        for run in school_name.runs:
+            run.font.color.rgb = GREEN_RGB
+            run.font.size = Pt(18)
+            set_arial(run)
         
         doc.add_paragraph()
-        add_horizontal_line(doc)
-        doc.add_page_break()
         
-        # ================================================================
-        # EXECUTIVE SUMMARY
-        # ================================================================
-        
-        heading = doc.add_heading('1. Executive Summary', 1)
+        # STUDENT INFORMATION
+        heading = doc.add_heading('Student Information', 1)
         for run in heading.runs:
-            run.font.color.rgb = PRIMARY_COLOR
-            set_arial(run, 16)
-        
-        # Key metrics in a professional table
-        total_incidents = len(full_df)
-        critical_count = len(full_df[full_df['incident_type'] == 'Critical']) if 'incident_type' in full_df.columns else 0
-        avg_severity = full_df['severity'].mean()
-        
-        risk_color = WARNING_COLOR if risk_score > 60 else (RGBColor(255, 193, 7) if risk_score > 30 else SUCCESS_COLOR)
-        
-        metrics = [
-            ("Total Incidents", total_incidents, ACCENT_COLOR),
-            ("Critical Incidents", critical_count, WARNING_COLOR if critical_count > 0 else SUCCESS_COLOR),
-            ("Avg Severity", f"{avg_severity:.1f}/5", ACCENT_COLOR),
-            ("Risk Score", f"{risk_score}/100", risk_color),
-        ]
-        
-        create_metric_table(doc, metrics)
-        
-        # Executive summary text
-        summary_text = f"""This Behaviour Analysis Plan presents a comprehensive analysis of {total_incidents} recorded behavioural incidents for {student['name']} over the analysis period. 
-
-The data reveals that the primary behaviour of concern is '{top_beh}', most commonly triggered by '{top_ant}'. Incidents predominantly occur in {top_loc} during the {top_session} session.
-
-The current risk level is assessed as {risk_level.upper()} ({risk_score}/100). This assessment considers incident frequency, severity patterns, and escalation trends."""
-
-        summary_para = doc.add_paragraph()
-        summary_run = summary_para.add_run(summary_text)
-        set_arial(summary_run, 11)
-        summary_para.paragraph_format.line_spacing = 1.5
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
+            
+        info_table = doc.add_table(rows=5, cols=2)
+        info_table.style = 'Light Grid Accent 1'
+        info_table.rows[0].cells[0].text = 'Student:'
+        info_table.rows[0].cells[1].text = student['name']
+        info_table.rows[1].cells[0].text = 'Program:'
+        info_table.rows[1].cells[1].text = PROGRAM_NAMES.get(student['program'], student['program'])
+        info_table.rows[2].cells[0].text = 'Grade:'
+        info_table.rows[2].cells[1].text = student['grade']
+        info_table.rows[3].cells[0].text = 'Analysis completed on:'
+        info_table.rows[3].cells[1].text = datetime.now().strftime('%d %B %Y')
+        info_table.rows[4].cells[0].text = 'Data Period:'
+        info_table.rows[4].cells[1].text = f"{full_df['date_parsed'].min().strftime('%d/%m/%Y')} - {full_df['date_parsed'].max().strftime('%d/%m/%Y')}"
         
         doc.add_paragraph()
         
-        # Key findings box
-        create_info_box(doc, "KEY FINDINGS AT A GLANCE", 
-            f"• Primary Behaviour: {top_beh}\n"
-            f"• Key Trigger: {top_ant}\n"
-            f"• Hotspot Location: {top_loc}\n"
-            f"• Peak Time: {top_session} session\n"
-            f"• Risk Level: {risk_level} ({risk_score}/100)",
-            "E3F2FD")
-        
-        doc.add_page_break()
-        
-        # ================================================================
-        # KEY METRICS & RISK ASSESSMENT
-        # ================================================================
-        
-        heading = doc.add_heading('2. Key Metrics & Risk Assessment', 1)
+        # SUMMARY
+        heading = doc.add_heading('Summary', 1)
         for run in heading.runs:
-            run.font.color.rgb = PRIMARY_COLOR
-            set_arial(run, 16)
-        
-        # Risk assessment matrix visualization
-        doc.add_heading('Risk Assessment Matrix', 2)
-        
-        # Create risk matrix as a matplotlib figure
-        fig, ax = plt.subplots(figsize=(8, 3), dpi=150)
-        
-        # Risk scale
-        risk_zones = [
-            (0, 30, '#28a745', 'LOW'),
-            (30, 60, '#ffc107', 'MODERATE'),
-            (60, 80, '#fd7e14', 'HIGH'),
-            (80, 100, '#dc3545', 'CRITICAL')
-        ]
-        
-        for start, end, color, label in risk_zones:
-            ax.barh(0, end-start, left=start, height=0.6, color=color, edgecolor='white', linewidth=2)
-            ax.text((start+end)/2, 0, label, ha='center', va='center', fontsize=10, fontweight='bold', color='white')
-        
-        # Add marker for current risk
-        ax.scatter([risk_score], [0], s=300, c='black', marker='v', zorder=5)
-        ax.text(risk_score, 0.45, f'{risk_score}', ha='center', va='bottom', fontsize=12, fontweight='bold')
-        
-        ax.set_xlim(0, 100)
-        ax.set_ylim(-0.5, 0.7)
-        ax.axis('off')
-        ax.set_title('Current Risk Level', fontsize=14, fontweight='bold', pad=10)
-        
-        plt.tight_layout()
-        img_buffer = BytesIO()
-        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
-        img_buffer.seek(0)
-        doc.add_picture(img_buffer, width=Inches(6))
-        plt.close()
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
+            
+        summary = doc.add_paragraph()
+        summary.add_run('Total Incidents: ').bold = True
+        summary.add_run(f"{len(full_df)}\n")
+        summary.add_run('Critical Incidents: ').bold = True
+        summary.add_run(f"{len(full_df[full_df['incident_type'] == 'Critical'])}\n")
+        summary.add_run('Average Severity: ').bold = True
+        summary.add_run(f"{full_df['severity'].mean():.2f}/5\n")
+        summary.add_run('Risk Level: ').bold = True
+        summary.add_run(f"{risk_level} ({risk_score}/100)")
         
         doc.add_paragraph()
         
-        # Detailed breakdown table
-        doc.add_heading('Incident Breakdown', 2)
-        
-        breakdown_table = doc.add_table(rows=6, cols=2)
-        breakdown_table.style = 'Table Grid'
-        breakdown_table.columns[0].width = Inches(3)
-        breakdown_table.columns[1].width = Inches(3)
-        
-        breakdown_data = [
-            ("Metric", "Value"),
-            ("Total Recorded Incidents", str(total_incidents)),
-            ("Critical Incidents (Severity 3+)", str(len(full_df[full_df['severity'] >= 3]))),
-            ("Average Incident Duration", f"{full_df['duration_minutes'].mean():.0f} minutes" if 'duration_minutes' in full_df.columns else "N/A"),
-            ("Most Active Day", full_df['day_of_week'].mode().iloc[0] if 'day_of_week' in full_df.columns and len(full_df) > 0 else "N/A"),
-            ("Data Collection Period", f"{(full_df['date_parsed'].max() - full_df['date_parsed'].min()).days} days"),
-        ]
-        
-        for i, (label, value) in enumerate(breakdown_data):
-            breakdown_table.rows[i].cells[0].paragraphs[0].add_run(label).bold = (i == 0)
-            breakdown_table.rows[i].cells[1].paragraphs[0].add_run(value).bold = (i == 0)
-            if i == 0:
-                for cell in breakdown_table.rows[i].cells:
-                    shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="008080" w:val="clear"/>')
-                    cell._tc.get_or_add_tcPr().append(shading)
-                    for run in cell.paragraphs[0].runs:
-                        run.font.color.rgb = RGBColor(255, 255, 255)
+        # KEY FINDINGS
+        heading = doc.add_heading('Key Findings', 1)
+        for run in heading.runs:
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
+            
+        findings = doc.add_paragraph()
+        findings.add_run('Behaviours of Concern: ').bold = True
+        findings.add_run(f"{top_beh}\n\n")
+        findings.add_run('Most Common Trigger: ').bold = True
+        findings.add_run(f"{top_ant}\n\n")
+        findings.add_run('Hotspot Location: ').bold = True
+        findings.add_run(f"{top_loc}\n\n")
+        findings.add_run('Occurs mainly in the: ').bold = True
+        findings.add_run(f"{top_session}")
         
         doc.add_page_break()
         
-        # ================================================================
         # VISUAL ANALYTICS
-        # ================================================================
-        
-        heading = doc.add_heading('3. Visual Analytics', 1)
+        heading = doc.add_heading('Visual Analytics', 1)
         for run in heading.runs:
-            run.font.color.rgb = PRIMARY_COLOR
-            set_arial(run, 16)
-        
-        intro = doc.add_paragraph()
-        intro_run = intro.add_run("The following visualisations provide data-driven insights into behavioural patterns, enabling targeted intervention strategies.")
-        set_arial(intro_run, 11)
-        intro_run.italic = True
-        
-        doc.add_paragraph()
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
+        doc.add_paragraph('The following graphs provide visual representation of incident patterns and trends.')
         
         plt.style.use('default')
+        from matplotlib.ticker import MaxNLocator
         
-        # GRAPH 1: Daily Incident Frequency
-        doc.add_heading('3.1 Daily Incident Frequency', 2)
-        
+        # GRAPH 1: DAILY INCIDENT FREQUENCY (BAR CHART)
+        heading = doc.add_heading('1. Daily Incident Frequency', 2)
+        for run in heading.runs:
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
+            
         daily = full_df.groupby(full_df["date_parsed"].dt.date).size().reset_index(name="count")
         fig, ax = plt.subplots(figsize=(10, 4), dpi=150)
-        
-        # Create gradient effect with color based on count
-        colors = ['#4A90A4' if c <= daily['count'].median() else '#2E5A6B' for c in daily['count']]
-        bars = ax.bar(daily["date_parsed"], daily["count"], color=colors, width=0.8, edgecolor='white', linewidth=0.5)
-        
-        ax.set_xlabel('Date', fontsize=11, fontweight='bold', color='#333333')
-        ax.set_ylabel('Number of Incidents', fontsize=11, fontweight='bold', color='#333333')
+        ax.bar(daily["date_parsed"], daily["count"], color='#334155', width=0.8, edgecolor='white', linewidth=0.5)
+        ax.set_xlabel('Date', fontsize=11, fontweight='bold')
+        ax.set_ylabel('Incident Count', fontsize=11, fontweight='bold')
         ax.grid(True, alpha=0.3, linestyle='--', axis='y')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
         plt.xticks(rotation=45, ha='right')
-        
-        # Add trend line
-        if len(daily) > 2:
-            z = np.polyfit(range(len(daily)), daily['count'], 1)
-            p = np.poly1d(z)
-            ax.plot(daily["date_parsed"], p(range(len(daily))), 
-                   linestyle='--', color='#DC3545', linewidth=2, label='Trend')
-            ax.legend(loc='upper right', frameon=False)
-        
         plt.tight_layout()
         img_buffer = BytesIO()
-        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
         img_buffer.seek(0)
         doc.add_picture(img_buffer, width=Inches(6))
         plt.close()
-        
-        interpretation = doc.add_paragraph()
-        trend_direction = "increasing" if len(daily) > 2 and z[0] > 0 else "decreasing" if len(daily) > 2 and z[0] < 0 else "stable"
-        int_run = interpretation.add_run(f"Interpretation: The daily incident frequency shows a {trend_direction} trend over the analysis period. Peak incident days should be cross-referenced with environmental factors.")
-        set_arial(int_run, 10)
-        int_run.italic = True
-        
+        doc.add_paragraph("Daily incident frequency shows when behaviours occur most often.")
         doc.add_paragraph()
         
-        # GRAPH 2: Behaviour Type Distribution
-        doc.add_heading('3.2 Behaviour Type Distribution', 2)
-        
-        beh_counts = full_df["behaviour_type"].value_counts().head(6)
+        # GRAPH 2: MOST COMMON BEHAVIOURS
+        heading = doc.add_heading('2. Most Common Behaviours', 2)
+        for run in heading.runs:
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
+            
+        beh_counts = full_df["behaviour_type"].value_counts().head(5)
         fig, ax = plt.subplots(figsize=(8, 4), dpi=150)
-        
-        colors = plt.cm.Blues(np.linspace(0.4, 0.8, len(beh_counts)))[::-1]
-        bars = ax.barh(beh_counts.index, beh_counts.values, color=colors, edgecolor='white', linewidth=1)
-        
-        ax.set_xlabel('Incident Count', fontsize=11, fontweight='bold', color='#333333')
+        ax.barh(beh_counts.index, beh_counts.values, color='#334155')
+        ax.set_xlabel('Incident Count', fontsize=11, fontweight='bold')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-        
-        for i, (bar, v) in enumerate(zip(bars, beh_counts.values)):
-            ax.text(v + 0.3, bar.get_y() + bar.get_height()/2, str(int(v)), 
-                   va='center', fontweight='bold', fontsize=11)
-        
+        for i, v in enumerate(beh_counts.values):
+            ax.text(v + 0.3, i, str(int(v)), va='center', fontweight='bold')
         plt.tight_layout()
         img_buffer = BytesIO()
-        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
         img_buffer.seek(0)
         doc.add_picture(img_buffer, width=Inches(6))
         plt.close()
-        
-        interpretation = doc.add_paragraph()
-        int_run = interpretation.add_run(f"Interpretation: '{beh_counts.index[0]}' is the predominant behaviour of concern, accounting for {int(beh_counts.values[0]/total_incidents*100)}% of all incidents.")
-        set_arial(int_run, 10)
-        int_run.italic = True
-        
+        doc.add_paragraph(f"Primary behaviour of concern: {beh_counts.index[0]} ({int(beh_counts.values[0])} incidents).")
         doc.add_paragraph()
         
-        # GRAPH 3: Trigger Analysis
-        doc.add_heading('3.3 Antecedent/Trigger Analysis', 2)
-        
-        ant_counts = full_df["antecedent"].value_counts().head(6)
+        # GRAPH 3: MOST COMMON TRIGGERS
+        heading = doc.add_heading('3. Most Common Triggers', 2)
+        for run in heading.runs:
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
+            
+        ant_counts = full_df["antecedent"].value_counts().head(5)
         fig, ax = plt.subplots(figsize=(8, 4), dpi=150)
-        
-        colors = plt.cm.Greens(np.linspace(0.4, 0.8, len(ant_counts)))[::-1]
-        bars = ax.barh(ant_counts.index, ant_counts.values, color=colors, edgecolor='white', linewidth=1)
-        
-        ax.set_xlabel('Incident Count', fontsize=11, fontweight='bold', color='#333333')
+        ax.barh(ant_counts.index, ant_counts.values, color='#475569')
+        ax.set_xlabel('Incident Count', fontsize=11, fontweight='bold')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-        
-        for i, (bar, v) in enumerate(zip(bars, ant_counts.values)):
-            ax.text(v + 0.3, bar.get_y() + bar.get_height()/2, str(int(v)), 
-                   va='center', fontweight='bold', fontsize=11)
-        
+        for i, v in enumerate(ant_counts.values):
+            ax.text(v + 0.3, i, str(int(v)), va='center', fontweight='bold')
         plt.tight_layout()
         img_buffer = BytesIO()
-        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
         img_buffer.seek(0)
         doc.add_picture(img_buffer, width=Inches(6))
         plt.close()
+        doc.add_paragraph(f"Key trigger: {ant_counts.index[0]}.")
+        doc.add_paragraph()
         
-        interpretation = doc.add_paragraph()
-        int_run = interpretation.add_run(f"Interpretation: Understanding that '{ant_counts.index[0]}' is the primary trigger enables proactive intervention before escalation occurs.")
-        set_arial(int_run, 10)
-        int_run.italic = True
-        
-        doc.add_page_break()
-        
-        # GRAPH 4: Severity Distribution
-        doc.add_heading('3.4 Severity Over Time', 2)
-        
+        # GRAPH 4: SEVERITY OVER TIME (COLOR-CODED, NO TREND LINE)
+        heading = doc.add_heading('4. Severity Over Time', 2)
+        for run in heading.runs:
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
+            
         fig, ax = plt.subplots(figsize=(10, 4), dpi=150)
-        colors = {1: '#28a745', 2: '#20c997', 3: '#ffc107', 4: '#fd7e14', 5: '#dc3545'}
-        labels = {1: 'Level 1 (Low)', 2: 'Level 2 (Minor)', 3: 'Level 3 (Moderate)', 
-                  4: 'Level 4 (Serious)', 5: 'Level 5 (Critical)'}
-        
+        colors = {1: '#10b981', 2: '#3b82f6', 3: '#f59e0b', 4: '#ef4444', 5: '#7f1d1d'}
         for sev_level in [1, 2, 3, 4, 5]:
             sev_data = full_df[full_df['severity'] == sev_level]
             if len(sev_data) > 0:
                 ax.scatter(sev_data["date_parsed"], sev_data["severity"], 
-                          alpha=0.8, s=100, color=colors[sev_level], 
-                          label=labels[sev_level], edgecolors='white', linewidth=1)
-        
-        ax.set_xlabel('Date', fontsize=11, fontweight='bold', color='#333333')
-        ax.set_ylabel('Severity Level', fontsize=11, fontweight='bold', color='#333333')
-        ax.set_ylim(0.5, 5.5)
-        ax.set_yticks([1, 2, 3, 4, 5])
+                          alpha=0.7, s=80, color=colors[sev_level], 
+                          label=f'Level {sev_level}', edgecolors='white', linewidth=0.5)
+        ax.set_xlabel('Date', fontsize=11, fontweight='bold')
+        ax.set_ylabel('Severity', fontsize=11, fontweight='bold')
+        ax.set_ylim(0, 5.5)
+        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.legend(loc='upper right', frameon=True, fancybox=True, shadow=True)
+        ax.legend(loc='upper right', frameon=False)
         ax.grid(True, alpha=0.3, linestyle='--', axis='y')
         plt.xticks(rotation=45, ha='right')
-        
         plt.tight_layout()
         img_buffer = BytesIO()
-        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
         img_buffer.seek(0)
         doc.add_picture(img_buffer, width=Inches(6))
         plt.close()
-        
+        doc.add_paragraph("Severity levels shown by colour: Green (Level 1-2 = Minor), Blue (Level 3 = Moderate), Orange (Level 4 = Serious), Red (Level 5 = Critical).")
         doc.add_paragraph()
         
-        # GRAPH 5: Location Hotspots
-        doc.add_heading('3.5 Location Hotspots', 2)
-        
+        # GRAPH 5: LOCATION HOTSPOTS
+        heading = doc.add_heading('5. Location Hotspots', 2)
+        for run in heading.runs:
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
+            
         loc_counts = full_df["location"].value_counts().head(5)
         fig, ax = plt.subplots(figsize=(8, 4), dpi=150)
-        
-        colors = plt.cm.Oranges(np.linspace(0.4, 0.8, len(loc_counts)))[::-1]
-        bars = ax.barh(loc_counts.index, loc_counts.values, color=colors, edgecolor='white', linewidth=1)
-        
-        ax.set_xlabel('Incident Count', fontsize=11, fontweight='bold', color='#333333')
+        ax.barh(loc_counts.index, loc_counts.values, color='#64748b')
+        ax.set_xlabel('Incident Count', fontsize=11, fontweight='bold')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-        
-        for i, (bar, v) in enumerate(zip(bars, loc_counts.values)):
-            ax.text(v + 0.3, bar.get_y() + bar.get_height()/2, str(int(v)), 
-                   va='center', fontweight='bold', fontsize=11)
-        
+        for i, v in enumerate(loc_counts.values):
+            ax.text(v + 0.3, i, str(int(v)), va='center', fontweight='bold')
         plt.tight_layout()
         img_buffer = BytesIO()
-        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
         img_buffer.seek(0)
         doc.add_picture(img_buffer, width=Inches(6))
         plt.close()
-        
-        interpretation = doc.add_paragraph()
-        int_run = interpretation.add_run(f"Interpretation: Environmental modifications in '{loc_counts.index[0]}' may yield significant improvements.")
-        set_arial(int_run, 10)
-        int_run.italic = True
-        
+        doc.add_paragraph(f"Most incidents occur in: {loc_counts.index[0]}.")
         doc.add_paragraph()
         
-        # GRAPH 6: Time of Day Pattern (Pie chart for variety)
-        doc.add_heading('3.6 Time of Day Distribution', 2)
-        
+        # GRAPH 6: TIME OF DAY PATTERNS (IMPROVED)
+        heading = doc.add_heading('6. Time of Day Patterns', 2)
+        for run in heading.runs:
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
+            
         session_counts = full_df["session"].value_counts()
         session_order = ['Morning', 'Middle', 'Afternoon']
         session_counts = session_counts.reindex(session_order, fill_value=0)
-        
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4), dpi=150)
-        
-        # Pie chart
-        colors_pie = ['#4A90A4', '#6BB9A0', '#E8B960']
-        explode = [0.05 if v == session_counts.max() else 0 for v in session_counts.values]
-        ax1.pie(session_counts.values, labels=session_counts.index, autopct='%1.0f%%',
-               colors=colors_pie, explode=explode, shadow=True, startangle=90)
-        ax1.set_title('Distribution by Session', fontsize=12, fontweight='bold')
-        
-        # Bar chart
-        bars = ax2.bar(session_counts.index, session_counts.values, color=colors_pie, edgecolor='white', linewidth=2)
-        ax2.set_ylabel('Incident Count', fontsize=11, fontweight='bold')
-        ax2.spines['top'].set_visible(False)
-        ax2.spines['right'].set_visible(False)
-        ax2.yaxis.set_major_locator(MaxNLocator(integer=True))
-        
-        for bar, v in zip(bars, session_counts.values):
-            ax2.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 0.3,
-                    str(int(v)), ha='center', va='bottom', fontweight='bold', fontsize=12)
-        ax2.set_title('Count by Session', fontsize=12, fontweight='bold')
-        
+        fig, ax = plt.subplots(figsize=(8, 4), dpi=150)
+        bars = ax.bar(session_counts.index, session_counts.values, color='#475569', edgecolor='white', linewidth=1.5)
+        ax.set_ylabel('Incident Count', fontsize=11, fontweight='bold')
+        ax.set_xlabel('Time of Day', fontsize=11, fontweight='bold')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+        for i, (bar, v) in enumerate(zip(bars, session_counts.values)):
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height + 0.3,
+                   str(int(v)), ha='center', va='bottom', fontweight='bold', fontsize=11)
         plt.tight_layout()
         img_buffer = BytesIO()
-        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
         img_buffer.seek(0)
         doc.add_picture(img_buffer, width=Inches(6))
         plt.close()
-        
         peak_session = session_counts.idxmax()
         peak_count = int(session_counts.max())
-        peak_pct = int(peak_count / total_incidents * 100)
-        
-        interpretation = doc.add_paragraph()
-        int_run = interpretation.add_run(f"Interpretation: The {peak_session} session accounts for {peak_pct}% of incidents ({peak_count} total). Staff resourcing and support strategies should prioritise this period.")
-        set_arial(int_run, 10)
-        int_run.italic = True
+        doc.add_paragraph(f"Peak time: {peak_session} session with {peak_count} incidents. This pattern helps identify when additional support is most needed.")
         
         doc.add_page_break()
         
-        # ================================================================
-        # CLINICAL INTERPRETATION
-        # ================================================================
-        
-        heading = doc.add_heading('4. Clinical Interpretation', 1)
+        # CLINICAL INTERPRETATION (ENHANCED)
+        heading = doc.add_heading('Clinical Interpretation', 1)
         for run in heading.runs:
-            run.font.color.rgb = PRIMARY_COLOR
-            set_arial(run, 16)
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
         
         intro = doc.add_paragraph()
-        intro.add_run("This analysis is grounded in evidence-based frameworks:").bold = True
-        
-        frameworks = [
-            ("Applied Behaviour Analysis (ABA)", "Understanding what triggers and maintains behaviours"),
-            ("Trauma-Informed Practice", "Recognising that behaviour is communication and often a response to stress"),
-            ("Berry Street Education Model", "A whole-school approach to wellbeing and engagement"),
-            ("Crisis Prevention Institute (CPI)", "De-escalation and maintaining dignity"),
-        ]
-        
-        for framework, description in frameworks:
-            p = doc.add_paragraph(style='List Bullet')
-            run1 = p.add_run(f"{framework}: ")
-            run1.bold = True
-            p.add_run(description)
-        
+        intro.add_run('This analysis is grounded in evidence-based frameworks that help us understand and support student behaviour. The following interpretation uses:')
+        doc.add_paragraph('• Applied Behaviour Analysis (ABA) - understanding what triggers and maintains behaviours', style='List Bullet')
+        doc.add_paragraph('• Trauma-Informed Practice - recognizing that behaviour is communication and often a response to stress', style='List Bullet')
+        doc.add_paragraph('• Berry Street Education Model - a whole-school approach to wellbeing and engagement', style='List Bullet')
+        doc.add_paragraph('• Crisis Prevention Institute (CPI) principles - de-escalation and maintaining dignity', style='List Bullet')
         doc.add_paragraph()
         
-        # Pattern analysis box
+        # PATTERN ANALYSIS
+        pattern_heading = doc.add_heading('Understanding the Patterns', 2)
+        for run in pattern_heading.runs:
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
+        
+        pattern = doc.add_paragraph()
+        pattern.add_run('What the data tells us:\n').bold = True
+        total_incidents = len(full_df)
         morning_pct = (len(full_df[full_df['session'] == 'Morning']) / total_incidents * 100) if total_incidents > 0 else 0
         middle_pct = (len(full_df[full_df['session'] == 'Middle']) / total_incidents * 100) if total_incidents > 0 else 0
         afternoon_pct = (len(full_df[full_df['session'] == 'Afternoon']) / total_incidents * 100) if total_incidents > 0 else 0
+        pattern_text = pattern.add_run(
+            f"Based on analysis of {total_incidents} recorded incidents, {student['name']} experiences the most difficulty "
+            f"when '{top_ant}' occurs. This happens most frequently in {top_loc}, particularly during the {top_session} session. "
+            f"\n\nTime of day breakdown shows: Morning ({morning_pct:.0f}% of incidents), Middle of day ({middle_pct:.0f}%), "
+            f"and Afternoon ({afternoon_pct:.0f}%). This pattern suggests that {student['name']}'s ability to regulate and cope "
+            f"is affected by time of day, likely due to factors like fatigue, hunger, sensory overload, or accumulated stress."
+            f"\n\nThe behaviour '{top_beh}' is the primary concern. From a trauma-informed perspective, this behaviour is "
+            f"{student['name']}'s way of communicating an unmet need or responding to feeling unsafe or overwhelmed. "
+            f"It is not 'naughtiness' or 'choosing' to misbehave - it is a stress response."
+        )
+        set_arial(pattern_text)
+        doc.add_paragraph()
         
-        pattern_content = f"""Based on analysis of {total_incidents} recorded incidents, {student['name']} experiences the most difficulty when '{top_ant}' occurs. This happens most frequently in {top_loc}, particularly during the {top_session} session.
-
-Time of day breakdown: Morning ({morning_pct:.0f}%), Middle ({middle_pct:.0f}%), Afternoon ({afternoon_pct:.0f}%)
-
-The behaviour '{top_beh}' is the primary concern. From a trauma-informed perspective, this behaviour is {student['name']}'s way of communicating an unmet need or responding to feeling unsafe or overwhelmed. It is not 'naughtiness' or 'choosing' to misbehave - it is a stress response."""
-        
-        create_info_box(doc, "UNDERSTANDING THE PATTERNS", pattern_content, "FFF8E1")
-        
-        doc.add_page_break()
-        
-        # ================================================================
-        # BERRY STREET FRAMEWORK (Condensed)
-        # ================================================================
-        
-        heading = doc.add_heading('5. Berry Street Education Model Framework', 1)
-        for run in heading.runs:
-            run.font.color.rgb = PRIMARY_COLOR
-            set_arial(run, 16)
+        # BERRY STREET EDUCATION MODEL
+        berry_heading = doc.add_heading('Berry Street Education Model Framework', 2)
+        for run in berry_heading.runs:
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
         
         berry_intro = doc.add_paragraph()
-        berry_intro.add_run("The Berry Street Education Model provides a sequential framework across five domains:").italic = True
-        
-        doc.add_paragraph()
-        
-        # Berry Street domains table
-        domains_table = doc.add_table(rows=6, cols=3)
-        domains_table.style = 'Table Grid'
-        
-        domains_data = [
-            ("Domain", "Focus", "Application"),
-            ("1. BODY", "Physical & emotional regulation", f"Help {student['name']} recognise body signals and use calming strategies before {top_session}"),
-            ("2. RELATIONSHIP", "Connection & trust", "Maintain consistent, calm responses; see behaviour as communication"),
-            ("3. STAMINA", "Persistence & resilience", "Break tasks into smaller steps; celebrate effort, not just outcomes"),
-            ("4. ENGAGEMENT", "Active learning", f"Make learning relevant; provide choice especially when '{top_ant}' occurs"),
-            ("5. CHARACTER", "Values & contribution", "Develop positive sense of self through contribution opportunities"),
-        ]
-        
-        for i, (domain, focus, application) in enumerate(domains_data):
-            for j, text in enumerate([domain, focus, application]):
-                cell = domains_table.rows[i].cells[j]
-                run = cell.paragraphs[0].add_run(text)
-                if i == 0:
-                    run.bold = True
-                    shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="008080" w:val="clear"/>')
-                    cell._tc.get_or_add_tcPr().append(shading)
-                    run.font.color.rgb = RGBColor(255, 255, 255)
-                elif j == 0:
-                    run.bold = True
-        
-        doc.add_paragraph()
-        
-        current_focus = doc.add_paragraph()
-        current_focus.add_run("CURRENT PRIORITY: ").bold = True
-        current_focus.add_run(f"Focus on BODY and RELATIONSHIP domains. The data shows {student['name']} is dysregulated during {top_session}, particularly when '{top_ant}' occurs. Engagement and character development require regulation and connection first.")
-        
-        doc.add_page_break()
-        
-        # ================================================================
-        # CPI PRINCIPLES (Condensed)
-        # ================================================================
-        
-        heading = doc.add_heading('6. Crisis Prevention Institute (CPI) Principles', 1)
-        for run in heading.runs:
-            run.font.color.rgb = PRIMARY_COLOR
-            set_arial(run, 16)
-        
-        cpi_principles = [
-            ("Behaviour is Communication", f"When {student['name']} displays '{top_beh}', they are saying: 'I'm overwhelmed,' 'I feel unsafe,' or 'I need help.'"),
-            ("Supportive Stance", "Stand at an angle, give space, keep hands visible, use low/slow voice. Your body language should say: 'I'm here to help.'"),
-            ("Maintain Dignity", "Never shame or embarrass. Separate the behaviour from the person. The message: 'I care about you, even when your behaviour is difficult.'"),
-            ("Early Intervention", f"Intervene at the first signs of escalation when '{top_ant}' is present. Offer a break, change the task, provide reassurance."),
-            ("Co-Regulation", f"{student['name']} often cannot self-regulate when dysregulated. Stay calm and lend them your regulation. Your calm becomes their calm."),
-        ]
-        
-        for title, description in cpi_principles:
-            p = doc.add_paragraph()
-            run1 = p.add_run(f"{title}: ")
-            run1.bold = True
-            run1.font.color.rgb = SECONDARY_COLOR
-            p.add_run(description)
-            doc.add_paragraph()
-        
-        doc.add_page_break()
-        
-        # ================================================================
-        # AUSTRALIAN CURRICULUM CAPABILITIES SECTION
-        # ================================================================
-        
-        heading = doc.add_heading('7. Australian Curriculum - General Capabilities', 1)
-        for run in heading.runs:
-            run.font.color.rgb = PRIMARY_COLOR
-            set_arial(run, 16)
-        
-        ac_intro = doc.add_paragraph()
-        ac_intro_run = ac_intro.add_run(
-            "The Australian Curriculum includes General Capabilities that are developed across all learning areas. "
-            "Behaviour support is directly connected to the Personal and Social Capability, which encompasses "
-            "self-awareness, self-management, social awareness, and social management."
+        berry_intro_text = berry_intro.add_run(
+            "The Berry Street Education Model is an evidence-based whole-school approach developed in partnership "
+            "with Melbourne University. It recognizes that students cannot learn effectively when they are stressed, "
+            "unsafe, or disconnected. The model provides a sequential framework across five domains that must be "
+            "addressed in order:\n"
         )
-        set_arial(ac_intro_run, 11)
+        set_arial(berry_intro_text)
         
-        doc.add_paragraph()
-        
-        # Get AC information for this student's primary behaviour
-        ac_info = get_ac_capability_for_behaviour(top_beh) if 'get_ac_capability_for_behaviour' in dir() else None
-        
-        if ac_info:
-            # Primary Capability Box
-            cap_heading = doc.add_heading('Primary Capability Focus', 2)
-            for run in cap_heading.runs:
-                run.font.color.rgb = PRIMARY_COLOR
-            
-            cap_table = doc.add_table(rows=1, cols=1)
-            cap_table.columns[0].width = Inches(6.5)
-            cap_cell = cap_table.rows[0].cells[0]
-            shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="E3F2FD" w:val="clear"/>')
-            cap_cell._tc.get_or_add_tcPr().append(shading)
-            
-            cap_para = cap_cell.paragraphs[0]
-            cap_run = cap_para.add_run(f"{ac_info['name']} ({ac_info['code']})")
-            cap_run.bold = True
-            cap_run.font.size = Pt(14)
-            cap_run.font.color.rgb = PRIMARY_COLOR
-            
-            elements_para = cap_cell.add_paragraph()
-            elements_run = elements_para.add_run(f"Focus Elements: {', '.join(ac_info['elements'])}")
-            elements_run.font.size = Pt(11)
-            
-            doc.add_paragraph()
-            
-            # Skills to Develop
-            skills_heading = doc.add_heading('Skills to Develop (AC-Aligned)', 2)
-            for run in skills_heading.runs:
-                run.font.color.rgb = PRIMARY_COLOR
-            
-            for skill in ac_info['skills_to_develop']:
-                p = doc.add_paragraph(style='List Bullet')
-                p.add_run(skill)
-            
-            doc.add_paragraph()
-            
-            # AC Descriptors
-            desc_heading = doc.add_heading('Curriculum Descriptors', 2)
-            for run in desc_heading.runs:
-                run.font.color.rgb = PRIMARY_COLOR
-            
-            for desc in ac_info['ac_descriptors']:
-                p = doc.add_paragraph(style='List Bullet')
-                run = p.add_run(desc)
-                run.italic = True
-        
-        else:
-            # Default PSC content if no specific mapping
-            psc_heading = doc.add_heading('Personal and Social Capability', 2)
-            for run in psc_heading.runs:
-                run.font.color.rgb = PRIMARY_COLOR
-            
-            psc_elements = doc.add_paragraph()
-            psc_elements.add_run("Key Elements for Behaviour Support:").bold = True
-            
-            psc_list = [
-                ("Self-awareness", "Recognise emotions, understand themselves as learners"),
-                ("Self-management", "Express emotions appropriately, develop self-discipline, become resilient"),
-                ("Social awareness", "Appreciate diverse perspectives, understand relationships"),
-                ("Social management", "Communicate effectively, resolve conflict, work collaboratively")
-            ]
-            
-            for element, description in psc_list:
-                p = doc.add_paragraph(style='List Bullet')
-                run1 = p.add_run(f"{element}: ")
-                run1.bold = True
-                p.add_run(description)
-        
-        doc.add_paragraph()
-        
-        # Learning Goals
-        goals_heading = doc.add_heading('AC-Aligned Learning Goals', 2)
-        for run in goals_heading.runs:
-            run.font.color.rgb = PRIMARY_COLOR
-        
-        goals_intro = doc.add_paragraph()
-        goals_intro.add_run(f"Suggested goals for {student['name']} based on behaviour patterns and grade level ({student['grade']}):").italic = True
-        
-        # Generate grade-appropriate goals
-        learning_goals = generate_ac_learning_goals(top_beh, top_ant, student['grade']) if 'generate_ac_learning_goals' in dir() else []
-        
-        if learning_goals:
-            goals_table = doc.add_table(rows=len(learning_goals) + 1, cols=3)
-            goals_table.style = 'Table Grid'
-            
-            # Header row
-            headers = ["Skill Focus", "Learning Goal", "AC Descriptor"]
-            for j, header in enumerate(headers):
-                cell = goals_table.rows[0].cells[j]
-                run = cell.paragraphs[0].add_run(header)
-                run.bold = True
-                shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="008080" w:val="clear"/>')
-                cell._tc.get_or_add_tcPr().append(shading)
-                run.font.color.rgb = RGBColor(255, 255, 255)
-            
-            # Data rows
-            for i, goal in enumerate(learning_goals):
-                goals_table.rows[i + 1].cells[0].paragraphs[0].add_run(goal['skill'])
-                goals_table.rows[i + 1].cells[1].paragraphs[0].add_run(goal['goal'])
-                desc_run = goals_table.rows[i + 1].cells[2].paragraphs[0].add_run(goal['ac_descriptor'])
-                desc_run.italic = True
-        else:
-            # Default goals
-            default_goals = [
-                ("Emotional recognition", f"Student will identify and name emotions when prompted", "Recognise emotions"),
-                ("Help-seeking", f"Student will use a help-seeking strategy independently", "Work independently and show initiative"),
-                ("Self-regulation", f"Student will use a calming strategy when dysregulated", "Express emotions appropriately")
-            ]
-            
-            for skill, goal, desc in default_goals:
-                p = doc.add_paragraph(style='List Bullet')
-                run1 = p.add_run(f"{skill}: ")
-                run1.bold = True
-                p.add_run(f"{goal} ")
-                desc_run = p.add_run(f"({desc})")
-                desc_run.italic = True
-        
-        doc.add_paragraph()
-        
-        # Connection note
-        connection_box = doc.add_table(rows=1, cols=1)
-        connection_box.columns[0].width = Inches(6.5)
-        conn_cell = connection_box.rows[0].cells[0]
-        shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="FFF8E1" w:val="clear"/>')
-        conn_cell._tc.get_or_add_tcPr().append(shading)
-        
-        conn_para = conn_cell.paragraphs[0]
-        conn_title = conn_para.add_run("Important: ")
-        conn_title.bold = True
-        conn_para.add_run(
-            "Progress in Personal and Social Capability should be documented alongside behaviour data. "
-            "This demonstrates growth in underlying skills, not just reduction in incidents. "
-            "AC capabilities provide a positive, strengths-based framework for reporting student progress."
+        # Domain 1: BODY
+        domain1 = doc.add_paragraph()
+        d1_title = domain1.add_run('\n1. BODY Domain (Physical and Emotional Regulation):\n')
+        d1_title.bold = True
+        set_arial(d1_title)
+        d1_text = domain1.add_run(
+            f"This is the foundation. {student['name']} must feel physically and emotionally safe and regulated before "
+            "anything else can happen. This means:\n"
+            "• Helping the student recognize their own body signals (heart racing, muscles tight, breathing fast)\n"
+            "• Teaching and practicing calming strategies (deep breathing, movement breaks, sensory tools)\n"
+            "• Creating predictable routines so the nervous system feels safe\n"
+            "• Providing regulation breaks BEFORE dysregulation occurs\n"
+            f"• Recognizing that during {top_session}, {student['name']} may need extra body-based support\n\n"
+            "WHY THIS MATTERS: When stressed, the brain's 'thinking centre' goes offline and the 'survival centre' takes over. "
+            "A dysregulated student cannot access learning, problem-solving, or relationship skills. "
+            "We must help them get regulated first."
         )
+        set_arial(d1_text)
+        
+        # Domain 2: RELATIONSHIP
+        domain2 = doc.add_paragraph()
+        d2_title = domain2.add_run('\n2. RELATIONSHIP Domain (Connection and Trust):\n')
+        d2_title.bold = True
+        set_arial(d2_title)
+        d2_text = domain2.add_run(
+            "Once physically regulated, students need safe, predictable relationships. This means:\n"
+            f"• One key adult who {student['name']} can trust and turn to when struggling\n"
+            "• Consistent, calm responses even during difficult behaviour\n"
+            "• Seeing behaviour as communication, not defiance\n"
+            "• Maintaining connection even when setting boundaries\n"
+            "• Understanding that damaged relationships must be repaired before learning can resume\n\n"
+            "WHY THIS MATTERS: Behaviour often escalates when students feel disconnected, misunderstood, or unsafe "
+            "in relationships. A strong relationship with at least one trusted adult is protective and helps students "
+            "regulate their emotions and behaviour."
+        )
+        set_arial(d2_text)
+        
+        # Domain 3: STAMINA
+        domain3 = doc.add_paragraph()
+        d3_title = domain3.add_run('\n3. STAMINA Domain (Persistence and Resilience):\n')
+        d3_title.bold = True
+        set_arial(d3_title)
+        d3_text = domain3.add_run(
+            f"With regulation and connection in place, we can build {student['name']}'s capacity to persist with challenges:\n"
+            "• Breaking tasks into smaller, achievable steps\n"
+            "• Celebrating effort, not just outcomes\n"
+            "• Teaching that mistakes are part of learning\n"
+            "• Building confidence through success experiences\n"
+            "• Gradually increasing expectations as capacity grows\n\n"
+            "WHY THIS MATTERS: Students who have experienced trauma or chronic stress often have learned that "
+            "'trying' leads to failure or shame. We must rebuild their belief that effort matters and that they are capable."
+        )
+        set_arial(d3_text)
+        
+        # Domain 4: ENGAGEMENT
+        domain4 = doc.add_paragraph()
+        d4_title = domain4.add_run('\n4. ENGAGEMENT Domain (Active Learning Participation):\n')
+        d4_title.bold = True
+        set_arial(d4_title)
+        d4_text = domain4.add_run(
+            "With the first three domains secure, students can engage meaningfully in learning:\n"
+            "• Making learning relevant and purposeful\n"
+            "• Providing choice and autonomy\n"
+            "• Using strengths and interests\n"
+            "• Creating positive relationships with learning\n"
+            f"• Recognizing that during {top_session}, engagement may need additional scaffolding\n\n"
+            "WHY THIS MATTERS: Students cannot engage in learning when dysregulated, disconnected, or defeated. "
+            "Engagement is a result of getting the foundation domains right, not something we can demand."
+        )
+        set_arial(d4_text)
+        
+        # Domain 5: CHARACTER
+        domain5 = doc.add_paragraph()
+        d5_title = domain5.add_run('\n5. CHARACTER Domain (Values and Contribution):\n')
+        d5_title.bold = True
+        set_arial(d5_title)
+        d5_text = domain5.add_run(
+            "The final domain focuses on purpose and positive contribution:\n"
+            "• Developing empathy and perspective-taking\n"
+            "• Understanding impact of actions on others\n"
+            "• Finding ways to contribute positively\n"
+            "• Building identity as a capable, valued person\n\n"
+            "WHY THIS MATTERS: This is NOT about 'being good' or compliance. It's about helping students "
+            "develop a positive sense of self and their place in the community. This domain only works when "
+            "the foundation domains are solid."
+        )
+        set_arial(d5_text)
+        doc.add_paragraph()
+        
+        berry_application = doc.add_paragraph()
+        ba_title = berry_application.add_run(f'Application to {student["name"]}:\n')
+        ba_title.bold = True
+        set_arial(ba_title)
+        ba_text = berry_application.add_run(
+            f"Currently, our focus must be on BODY and RELATIONSHIP domains. The data shows {student['name']} "
+            f"is dysregulated during {top_session}, particularly when '{top_ant}' occurs. "
+            "We cannot expect engagement or character development until regulation and connection are secure. "
+            "All recommendations in this plan prioritize these foundation domains first."
+        )
+        set_arial(ba_text)
+        doc.add_paragraph()
+        
+        # CPI PRINCIPLES
+        cpi_heading = doc.add_heading('Crisis Prevention Institute (CPI) Principles', 2)
+        for run in cpi_heading.runs:
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
+        
+        cpi_intro = doc.add_paragraph()
+        cpi_intro_text = cpi_intro.add_run(
+            "CPI provides evidence-based training in de-escalation and crisis prevention. The core principles guide "
+            "how we respond when students are escalating or in crisis:\n"
+        )
+        set_arial(cpi_intro_text)
+        
+        # CPI Principle 1
+        cpi1 = doc.add_paragraph()
+        cpi1_title = cpi1.add_run('\nBehaviour is Communication:\n')
+        cpi1_title.bold = True
+        set_arial(cpi1_title)
+        cpi1_text = cpi1.add_run(
+            f"When {student['name']} displays '{top_beh}', they are communicating something important. "
+            "They might be saying: 'I'm overwhelmed,' 'I feel unsafe,' 'I don't understand,' 'I need help,' "
+            "or 'I'm hungry/tired/stressed.' Our job is to understand the message, not just stop the behaviour."
+        )
+        set_arial(cpi1_text)
+        
+        # CPI Principle 2
+        cpi2 = doc.add_paragraph()
+        cpi2_title = cpi2.add_run('\nSupportive Stance:\n')
+        cpi2_title.bold = True
+        set_arial(cpi2_title)
+        cpi2_text = cpi2.add_run(
+            "How we position our body matters. Stand at an angle (not directly facing), give space (don't crowd), "
+            "keep hands visible and open, stay at or below eye level. Use a low, slow, calm voice. "
+            "Your body language should say: 'I'm here to help, you are safe with me.'"
+        )
+        set_arial(cpi2_text)
+        
+        # CPI Principle 3
+        cpi3 = doc.add_paragraph()
+        cpi3_title = cpi3.add_run('\nMaintain Dignity:\n')
+        cpi3_title.bold = True
+        set_arial(cpi3_title)
+        cpi3_text = cpi3.add_run(
+            "Never shame, embarrass, or humiliate. Don't have an audience for correction. "
+            "Separate the behaviour from the person. The message should always be: 'I care about you, "
+            "even when your behaviour is difficult.'"
+        )
+        set_arial(cpi3_text)
+        
+        # CPI Principle 4
+        cpi4 = doc.add_paragraph()
+        cpi4_title = cpi4.add_run('\nEarly Intervention:\n')
+        cpi4_title.bold = True
+        set_arial(cpi4_title)
+        cpi4_text = cpi4.add_run(
+            f"The data shows that '{top_ant}' is a key trigger. CPI teaches us to intervene early - "
+            "at the first signs of escalation, before crisis. This might mean: offering a break, changing the task, "
+            "providing reassurance, or simply moving to a quieter space. Early intervention prevents crisis."
+        )
+        set_arial(cpi4_text)
+        
+        # CPI Principle 5
+        cpi5 = doc.add_paragraph()
+        cpi5_title = cpi5.add_run('\nCo-Regulation:\n')
+        cpi5_title.bold = True
+        set_arial(cpi5_title)
+        cpi5_text = cpi5.add_run(
+            f"Students like {student['name']} often cannot regulate themselves when dysregulated. "
+            "They need an adult to stay calm and lend them their regulation. Your calm becomes their calm. "
+            "This is why adult self-regulation is essential - you cannot co-regulate if you are also dysregulated."
+        )
+        set_arial(cpi5_text)
+        doc.add_paragraph()
+        
+        cpi_application = doc.add_paragraph()
+        ca_title = cpi_application.add_run(f'Application to {student["name"]}:\n')
+        ca_title.bold = True
+        set_arial(ca_title)
+        ca_text = cpi_application.add_run(
+            f"When incidents occur in {top_loc} during {top_session}, staff should use CPI principles: "
+            "approach calmly with supportive stance, offer choices to maintain dignity, intervene early "
+            f"when '{top_ant}' is present, and provide co-regulation rather than consequences. "
+            "The goal is always to help the student return to their window of tolerance, not to punish."
+        )
+        set_arial(ca_text)
+        
+        doc.add_page_break()
+        heading = doc.add_heading('Evidence-Based Recommendations', 1)
+        for run in heading.runs:
+            run.font.color.rgb = GREEN_RGB
+            set_arial(run)
+        
+        heading = doc.add_heading('1. Body Domain (Regulation)', 2)
+
+        for run in heading.runs:
+
+            run.font.color.rgb = GREEN_RGB
+
+            set_arial(run)
+        doc.add_paragraph(f"• Regulated start before {top_session}", style='List Bullet')
+        doc.add_paragraph(f"• Visual check-in before '{top_ant}'", style='List Bullet')
+        doc.add_paragraph(f"• Environmental modification in {top_loc}", style='List Bullet')
+        doc.add_paragraph("• Sensory regulation opportunities", style='List Bullet')
+        
+        heading = doc.add_heading('2. Relationship Domain (Connection)', 2)
+
+        
+        for run in heading.runs:
+
+        
+            run.font.color.rgb = GREEN_RGB
+
+        
+            set_arial(run)
+        doc.add_paragraph("• Supportive Stance with low, slow voice", style='List Bullet')
+        doc.add_paragraph("• One key adult maintains connection", style='List Bullet')
+        doc.add_paragraph("• Acknowledge feelings", style='List Bullet')
+        doc.add_paragraph("• Offer choices for control", style='List Bullet')
+        
+        heading = doc.add_heading('3. Stamina Domain (Persistence)', 2)
+
+        
+        for run in heading.runs:
+
+        
+            run.font.color.rgb = GREEN_RGB
+
+        
+            set_arial(run)
+        doc.add_paragraph("• Teach help-seeking with visual cues", style='List Bullet')
+        doc.add_paragraph("• Practice requesting breaks", style='List Bullet')
+        doc.add_paragraph("• Emotional literacy skills", style='List Bullet')
+        doc.add_paragraph("• Build coping strategies", style='List Bullet')
+        
+        heading = doc.add_heading('4. SMART Goal', 2)
+
+        
+        for run in heading.runs:
+
+        
+            run.font.color.rgb = GREEN_RGB
+
+        
+            set_arial(run)
+        goal = doc.add_paragraph()
+        goal.add_run('Measurable: ').bold = True
+        goal.add_run("Over 5 weeks, use help-seeking strategy in 4/5 opportunities with support.")
+        doc.add_paragraph()
+        doc.add_paragraph('Review Date: ' + (datetime.now() + timedelta(weeks=5)).strftime('%d %B %Y'))
         
         doc.add_page_break()
         
-        # ================================================================
-        # EVIDENCE-BASED RECOMMENDATIONS (Updated numbering)
-        # ================================================================
-        
-        heading = doc.add_heading('8. Evidence-Based Recommendations', 1)
-        for run in heading.runs:
-            run.font.color.rgb = PRIMARY_COLOR
-            set_arial(run, 16)
-        
-        # Recommendations table with priority levels
-        rec_table = doc.add_table(rows=9, cols=3)
-        rec_table.style = 'Table Grid'
-        
-        recommendations = [
-            ("Priority", "Recommendation", "Rationale"),
-            ("HIGH", f"Implement regulated start before {top_session}", f"Peak incidents occur during {top_session}"),
-            ("HIGH", f"Environmental modification in {top_loc}", f"Highest incident location"),
-            ("HIGH", f"Visual check-in before '{top_ant}'", "Anticipate and prevent escalation"),
-            ("MEDIUM", "Sensory regulation toolkit", "Support body-based regulation"),
-            ("MEDIUM", "One key adult maintains connection", "Relationship is protective"),
-            ("MEDIUM", "Offer choices for control", "Maintains dignity and autonomy"),
-            ("ONGOING", "Teach help-seeking strategies", "Build long-term coping skills"),
-            ("ONGOING", "Practice emotional literacy", "Develop self-awareness"),
-        ]
-        
-        priority_colors = {"Priority": "008080", "HIGH": "DC3545", "MEDIUM": "FD7E14", "ONGOING": "28A745"}
-        
-        for i, (priority, rec, rationale) in enumerate(recommendations):
-            for j, text in enumerate([priority, rec, rationale]):
-                cell = rec_table.rows[i].cells[j]
-                run = cell.paragraphs[0].add_run(text)
-                if i == 0:
-                    run.bold = True
-                    shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="008080" w:val="clear"/>')
-                    cell._tc.get_or_add_tcPr().append(shading)
-                    run.font.color.rgb = RGBColor(255, 255, 255)
-                elif j == 0:
-                    run.bold = True
-                    color = priority_colors.get(priority, "333333")
-                    run.font.color.rgb = RGBColor(int(color[0:2], 16), int(color[2:4], 16), int(color[4:6], 16))
-        
-        doc.add_page_break()
-        
-        # ================================================================
-        # ACTION PLAN & TIMELINE
-        # ================================================================
-        
-        heading = doc.add_heading('9. Action Plan & Timeline', 1)
-        for run in heading.runs:
-            run.font.color.rgb = PRIMARY_COLOR
-            set_arial(run, 16)
-        
-        # SMART Goal
-        goal_box = create_info_box(doc, "SMART GOAL",
-            f"Within 5 weeks, {student['name']} will use a help-seeking strategy (e.g., break card, signal to adult) in 4 out of 5 opportunities when experiencing triggers related to '{top_ant}', with visual and verbal support.",
-            "E8F5E9")
-        
-        # Timeline table
-        doc.add_heading('Implementation Timeline', 2)
-        
-        timeline_table = doc.add_table(rows=5, cols=3)
-        timeline_table.style = 'Table Grid'
-        
-        review_date = datetime.now() + timedelta(weeks=5)
-        
-        timeline_data = [
-            ("Week", "Focus Area", "Key Actions"),
-            ("Week 1-2", "Assessment & Setup", f"Baseline data collection, environmental audit of {top_loc}, introduce regulation tools"),
-            ("Week 2-3", "Implementation", f"Scheduled regulation breaks before {top_session}, visual supports in place, key adult assigned"),
-            ("Week 3-4", "Skill Building", "Teach and practice help-seeking strategies, emotional vocabulary development"),
-            ("Week 5", "Review", f"Progress review on {review_date.strftime('%d %B %Y')}, data comparison, plan adjustment"),
-        ]
-        
-        for i, (week, focus, actions) in enumerate(timeline_data):
-            for j, text in enumerate([week, focus, actions]):
-                cell = timeline_table.rows[i].cells[j]
-                run = cell.paragraphs[0].add_run(text)
-                if i == 0:
-                    run.bold = True
-                    shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="008080" w:val="clear"/>')
-                    cell._tc.get_or_add_tcPr().append(shading)
-                    run.font.color.rgb = RGBColor(255, 255, 255)
-        
-        doc.add_paragraph()
-        
-        # ================================================================
-        # REVIEW SCHEDULE
-        # ================================================================
-        
-        heading = doc.add_heading('10. Review Schedule', 1)
-        for run in heading.runs:
-            run.font.color.rgb = PRIMARY_COLOR
-            set_arial(run, 16)
-        
-        review_table = doc.add_table(rows=4, cols=3)
-        review_table.style = 'Table Grid'
-        
-        review_data = [
-            ("Review Type", "Date", "Attendees"),
-            ("Weekly Check-in", "Every Friday", "Key adult, classroom teacher"),
-            ("Formal Review", review_date.strftime('%d %B %Y'), "Full support team, parent/caregiver"),
-            ("Plan Renewal", (review_date + timedelta(weeks=5)).strftime('%d %B %Y'), "Support team, leadership"),
-        ]
-        
-        for i, row_data in enumerate(review_data):
-            for j, text in enumerate(row_data):
-                cell = review_table.rows[i].cells[j]
-                run = cell.paragraphs[0].add_run(text)
-                if i == 0:
-                    run.bold = True
-                    shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="008080" w:val="clear"/>')
-                    cell._tc.get_or_add_tcPr().append(shading)
-                    run.font.color.rgb = RGBColor(255, 255, 255)
-        
-        doc.add_paragraph()
-        doc.add_paragraph()
-        
-        # ================================================================
-        # SIGNATURE SECTION
-        # ================================================================
-        
-        add_horizontal_line(doc)
-        
-        sig_heading = doc.add_paragraph()
-        sig_heading.add_run("Prepared By").bold = True
-        
-        sig_table = doc.add_table(rows=2, cols=2)
-        sig_table.columns[0].width = Inches(3)
-        sig_table.columns[1].width = Inches(3)
-        
-        sig_table.rows[0].cells[0].paragraphs[0].add_run("Name: _________________________")
-        sig_table.rows[0].cells[1].paragraphs[0].add_run("Role: _________________________")
-        sig_table.rows[1].cells[0].paragraphs[0].add_run("Signature: _____________________")
-        sig_table.rows[1].cells[1].paragraphs[0].add_run(f"Date: {datetime.now().strftime('%d/%m/%Y')}")
-        
-        doc.add_paragraph()
-        doc.add_paragraph()
-        
-        # Footer
+        # FOOTER
         footer = doc.add_paragraph()
         footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        footer_run = footer.add_run("Cowandilla Learning Centre | Learning and Behaviour Support Unit")
-        footer_run.font.size = Pt(9)
-        footer_run.font.color.rgb = PRIMARY_COLOR
-        footer_run.bold = True
+        footer_run = footer.add_run('\n\nLearning and Behaviour Unit\n')
+        footer_run.font.size = Pt(10)
+        footer_run.font.bold = True
+        footer_run.font.color.rgb = RGBColor(14, 165, 233)
         
         footer2 = doc.add_paragraph()
         footer2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        footer2_run = footer2.add_run("Evidence-based frameworks: Applied Behaviour Analysis | Trauma-Informed Practice | Berry Street Education Model | CPI")
-        footer2_run.font.size = Pt(8)
-        footer2_run.font.color.rgb = RGBColor(128, 128, 128)
+        footer2_run = footer2.add_run('Evidence-based: ABA, Trauma-Informed, Berry Street, CPI\n')
+        footer2_run.font.size = Pt(9)
+        footer2_run.font.color.rgb = RGBColor(100, 116, 139)
         
-        # Save document
+        footer3 = doc.add_paragraph()
+        footer3.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        footer3_run = footer3.add_run(datetime.now().strftime('%d %B %Y'))
+        footer3_run.font.size = Pt(9)
+        footer3_run.font.color.rgb = RGBColor(100, 116, 139)
+        
         file_stream = BytesIO()
         doc.save(file_stream)
         file_stream.seek(0)
@@ -1957,9 +1179,10 @@ The behaviour '{top_beh}' is the primary concern. From a trauma-informed perspec
         
     except Exception as e:
         import traceback
-        st.error(f"BAP Generation Error: {e}")
+        st.error(f"BAP Error: {e}")
         st.error(traceback.format_exc())
         return None
+
 
 # ============================================
 # SUPABASE DATABASE FUNCTIONS
@@ -1971,9 +1194,6 @@ def hash_password(plain_password: str) -> str:
     hashed = bcrypt.hashpw(plain_password.encode('utf-8'), salt)
     return hashed.decode('utf-8')
 
-# FIXED load_students_from_db FUNCTION
-# Replace the existing load_students_from_db function (around line 1060-1085)
-
 def load_students_from_db():
     """Load students from Supabase database"""
     if not supabase:
@@ -1983,67 +1203,31 @@ def load_students_from_db():
         response = supabase.table('students').select('*').execute()
         students = []
         for row in response.data:
-            # Convert grade from integer back to string format
-            grade_num = row['grade']
-            if grade_num == 0:
-                grade_str = 'R'
-            else:
-                grade_str = f'Y{grade_num}'
-            
-            # Handle first_name/last_name - construct name if not present
-            first_name = row.get('first_name', '')
-            last_name = row.get('last_name', '')
-            full_name = row.get('name', '')
-            
-            # If first_name/last_name not in DB, parse from name
-            if not first_name and full_name:
-                parts = full_name.split()
-                first_name = parts[0] if parts else ''
-                last_name = ' '.join(parts[1:]) if len(parts) > 1 else ''
-            
-            # If name not in DB, construct from first/last
-            if not full_name and (first_name or last_name):
-                full_name = f"{first_name} {last_name}".strip()
-            
             students.append({
                 "id": str(row['id']),
-                "first_name": first_name,
-                "last_name": last_name,
-                "name": full_name,
+                "name": row['name'],
                 "edid": row['edid'],
-                "grade": grade_str,  # Convert back to Y1, Y2, R format
+                "grade": row['grade'],
                 "dob": row['dob'],
                 "program": row['program'],
                 "placement_start": row['placement_start'],
                 "placement_end": row['placement_end']
             })
-        return students
+        return students  # Return empty list if no students in database
     except Exception as e:
         st.error(f"Error loading students: {e}")
-        return []
+        return []  # Return empty list on error
 
 def save_student_to_db(student):
     """Save a student to Supabase database"""
     if not supabase:
-        # DEMO MODE: Return True to allow app to function without database
-        return True
+        return False
     
     try:
-        # Convert grade to just the number if it starts with Y
-        grade_value = student['grade']
-        if isinstance(grade_value, str):
-            if grade_value.startswith('Y'):
-                grade_value = grade_value[1:]
-            elif grade_value == 'R':
-                grade_value = 0
-        
         data = {
-            "first_name": student.get('first_name', student['name'].split()[0] if student['name'] else ''),
-            "last_name": student.get('last_name', ' '.join(student['name'].split()[1:]) if len(student['name'].split()) > 1 else ''),
             "name": student['name'],
             "edid": student['edid'],
-            "grade": int(grade_value) if str(grade_value).isdigit() else 0,
-            "year_level": int(grade_value) if str(grade_value).isdigit() else 0,
+            "grade": student['grade'],
             "dob": student['dob'],
             "program": student['program'],
             "placement_start": student['placement_start'],
@@ -2051,20 +1235,20 @@ def save_student_to_db(student):
         }
         
         if 'id' in student and student['id'].startswith('stu_'):
+            # New student (generated ID from app)
             supabase.table('students').insert(data).execute()
         else:
+            # Existing student (UUID from database)
             supabase.table('students').update(data).eq('id', student['id']).execute()
-        
         return True
-        
     except Exception as e:
         st.error(f"Error saving student: {e}")
         return False
-def delete_student_from_db(student_id):
+
+def delete_student_from_db(student_id):  # Mock
     """Delete a student from Supabase database"""
     if not supabase:
-        # DEMO MODE: Return True to allow app to function without database
-        return True
+        return False
     
     try:
         supabase.table('students').delete().eq('id', student_id).execute()
@@ -2073,7 +1257,7 @@ def delete_student_from_db(student_id):
         st.error(f"Error deleting student: {e}")
         return False
 
-def load_staff_from_db():
+def load_staff_from_db():  # Mock
     """Load staff from Supabase database"""
     if not supabase:
         return MOCK_STAFF
@@ -2082,26 +1266,9 @@ def load_staff_from_db():
         response = supabase.table('staff').select('*').execute()
         staff = []
         for row in response.data:
-            # Handle first_name/last_name - construct name if not present
-            first_name = row.get('first_name', '')
-            last_name = row.get('last_name', '')
-            full_name = row.get('name', '')
-            
-            # If first_name/last_name not in DB, parse from name
-            if not first_name and full_name:
-                parts = full_name.split()
-                first_name = parts[0] if parts else ''
-                last_name = ' '.join(parts[1:]) if len(parts) > 1 else ''
-            
-            # If name not in DB, construct from first/last
-            if not full_name and (first_name or last_name):
-                full_name = f"{first_name} {last_name}".strip()
-            
             staff.append({
                 "id": str(row['id']),
-                "first_name": first_name,
-                "last_name": last_name,
-                "name": full_name,
+                "name": row['name'],
                 "email": row['email'],
                 "password": row.get('password'),  # Keep for backward compatibility
                 "password_hash": row.get('password_hash', row.get('password')),  # Use password_hash if available
@@ -2117,16 +1284,13 @@ def load_staff_from_db():
         st.error(f"Error loading staff: {e}")
         return []  # Return empty list on error
 
-def save_staff_to_db(staff_member):
+def save_staff_to_db(staff_member):  # Mock
     """Save a staff member to Supabase database"""
     if not supabase:
-        # DEMO MODE: Return True to allow app to function without database
-        return True
+        return False
     
     try:
         data = {
-            "first_name": staff_member.get('first_name', staff_member['name'].split()[0] if staff_member['name'] else ''),
-            "last_name": staff_member.get('last_name', ' '.join(staff_member['name'].split()[1:]) if len(staff_member['name'].split()) > 1 else ''),
             "name": staff_member['name'],
             "email": staff_member['email'],
             "password": staff_member['password'],
@@ -2148,11 +1312,10 @@ def save_staff_to_db(staff_member):
         st.error(f"Error saving staff: {e}")
         return False
 
-def delete_staff_from_db(staff_id):
+def delete_staff_from_db(staff_id):  # Mock
     """Delete a staff member from Supabase database"""
     if not supabase:
-        # DEMO MODE: Return True to allow app to function without database
-        return True
+        return False
     
     try:
         supabase.table('staff').delete().eq('id', staff_id).execute()
@@ -2161,7 +1324,7 @@ def delete_staff_from_db(staff_id):
         st.error(f"Error deleting staff: {e}")
         return False
 
-def load_incidents_from_db(student_id=None):
+def load_incidents_from_db(student_id=None):  # Mock
     """Load incidents from Supabase database"""
     if not supabase:
         return []
@@ -2198,11 +1361,10 @@ def load_incidents_from_db(student_id=None):
         st.error(f"Error loading incidents: {e}")
         return []
 
-def save_incident_to_db(incident):
+def save_incident_to_db(incident):  # Mock
     """Save an incident to Supabase database"""
     if not supabase:
-        # DEMO MODE: Return True to allow app to function without database
-        return True
+        return False
     
     try:
         data = {
@@ -2235,7 +1397,7 @@ def save_incident_to_db(incident):
         st.error(f"Error saving incident: {e}")
         return False
 
-def load_critical_incidents_from_db(student_id=None):
+def load_critical_incidents_from_db(student_id=None):  # Mock
     """Load critical incidents from Supabase database"""
     if not supabase:
         return []
@@ -2273,11 +1435,10 @@ def load_critical_incidents_from_db(student_id=None):
         st.error(f"Error loading critical incidents: {e}")
         return []
 
-def save_critical_incident_to_db(critical):
+def save_critical_incident_to_db(critical):  # Mock
     """Save a critical incident to Supabase database"""
     if not supabase:
-        # DEMO MODE: Return True to allow app to function without database
-        return True
+        return False
     
     try:
         primary = critical.get('ABCH_primary', {})
@@ -2311,21 +1472,20 @@ def save_critical_incident_to_db(critical):
 
 
 def init_state():
-    """Initialize session state with DEMO DATA - This is the demo version"""
     ss = st.session_state
     if "logged_in" not in ss: ss.logged_in = False
     if "current_user" not in ss: ss.current_user = None
     if "current_page" not in ss: ss.current_page = "login"
     
-    # DEMO VERSION: Always use mock data for demonstration purposes
+    # Load from Supabase if available, otherwise use mock data
     if "students" not in ss: 
-        ss.students = MOCK_STUDENTS.copy()
+        ss.students = load_students_from_db() if supabase else MOCK_STUDENTS
     if "staff" not in ss: 
-        ss.staff = MOCK_STAFF.copy()
+        ss.staff = load_staff_from_db() if supabase else MOCK_STAFF
     if "incidents" not in ss: 
-        ss.incidents = generate_demo_incidents()
+        ss.incidents = load_incidents_from_db() if supabase else generate_mock_incidents(70)
     if "critical_incidents" not in ss: 
-        ss.critical_incidents = generate_demo_critical_incidents()
+        ss.critical_incidents = load_critical_incidents_from_db() if supabase else []
     
     if "selected_program" not in ss: ss.selected_program = "JP"
     if "selected_student_id" not in ss: ss.selected_student_id = None
@@ -2334,42 +1494,77 @@ def init_state():
     if "show_critical_prompt" not in ss: ss.show_critical_prompt = False
 
 def login_user(email: str, password: str) -> bool:
-    """Login user - Demo version uses plain password matching"""
+    """Login user with bcrypt password verification"""
     email = (email or "").strip().lower()
     password = (password or "").strip()
     
+    st.write(f"🔍 DEBUG: Attempting login with email: '{email}'")
+    st.write(f"🔍 DEBUG: Password length: {len(password)}")
+    st.write(f"🔍 DEBUG: Total staff in memory: {len(st.session_state.staff)}")
+    
     if not email or not password:
+        st.write("❌ DEBUG: Email or password empty")
         return False
     
-    for staff in st.session_state.staff:
+    for idx, staff in enumerate(st.session_state.staff):
         staff_email = staff.get("email", "").lower()
+        st.write(f"🔍 DEBUG: Checking staff #{idx}: {staff_email}")
         
         if staff_email == email:
-            # Demo version: Use plain password matching
-            if staff.get("password") == password:
-                st.session_state.logged_in = True
-                st.session_state.current_user = staff
-                st.session_state.current_page = "landing"
-                return True
+            st.write(f"✅ DEBUG: Email match found!")
+            st.write(f"🔍 DEBUG: Staff has password field: {staff.get('password')}")
+            st.write(f"🔍 DEBUG: Staff has password_hash field: {staff.get('password_hash', '')[:30]}...")
             
-            # Also try bcrypt if available
+            # Get the stored hash
             stored_hash = staff.get("password_hash", "")
-            if stored_hash:
-                try:
-                    if isinstance(stored_hash, str):
-                        stored_hash_bytes = stored_hash.encode('utf-8')
-                    else:
-                        stored_hash_bytes = stored_hash
-                    password_bytes = password.encode('utf-8')
+            if not stored_hash:
+                st.write("⚠️ DEBUG: No password_hash found, trying plain password")
+                if staff.get("password") == password:
+                    st.write("✅ DEBUG: Plain password match!")
+                    st.session_state.logged_in = True
+                    st.session_state.current_user = staff
+                    st.session_state.current_page = "landing"
+                    return True
+                else:
+                    st.write(f"❌ DEBUG: Plain password mismatch. Expected: '{staff.get('password')}', Got: '{password}'")
+                    continue
+            
+            # Verify password against bcrypt hash
+            try:
+                if isinstance(stored_hash, str):
+                    stored_hash_bytes = stored_hash.encode('utf-8')
+                else:
+                    stored_hash_bytes = stored_hash
                     
-                    if bcrypt.checkpw(password_bytes, stored_hash_bytes):
+                password_bytes = password.encode('utf-8')
+                
+                st.write(f"🔍 DEBUG: Attempting bcrypt verification...")
+                if bcrypt.checkpw(password_bytes, stored_hash_bytes):
+                    st.write("✅ DEBUG: Bcrypt verification SUCCESS!")
+                    st.session_state.logged_in = True
+                    st.session_state.current_user = staff
+                    st.session_state.current_page = "landing"
+                    return True
+                else:
+                    st.write("❌ DEBUG: Bcrypt verification FAILED")
+                    if staff.get("password") == password:
+                        st.write("✅ DEBUG: Using plain password fallback - LOGIN SUCCESS!")
                         st.session_state.logged_in = True
                         st.session_state.current_user = staff
                         st.session_state.current_page = "landing"
                         return True
-                except Exception:
-                    pass
+                    else:
+                        st.write(f"❌ DEBUG: Plain password mismatch")
+            except Exception as e:
+                st.write(f"⚠️ DEBUG: Bcrypt error: {e}")
+                if staff.get("password") == password:
+                    st.write("✅ DEBUG: Plain password fallback after exception - LOGIN SUCCESS!")
+                    st.session_state.logged_in = True
+                    st.session_state.current_user = staff
+                    st.session_state.current_page = "landing"
+                    return True
     
+    st.write("❌ DEBUG: No matching staff found")
     return False
 def go_to(page: str, **kwargs):
     if page not in VALID_PAGES: return
@@ -2384,347 +1579,33 @@ def get_student(sid):
 def get_session_from_time(t): 
     return "Morning" if t.hour < 11 else "Middle" if t.hour < 13 else "Afternoon"
 
-def generate_demo_incidents():
-    """Generate comprehensive demo incidents - 5-8 per student with realistic patterns"""
-    incidents = []
-    
-    # Define realistic incident patterns for each student
-    student_patterns = {
-        "stu_jp1": {  # Emma Thompson - R - escape/avoidance focused
-            "primary_behaviours": ["Verbal Refusal", "Elopement"],
-            "primary_antecedents": ["Demand - literacy tasks", "Transition - to a non-preferred activity"],
-            "primary_locations": ["Classroom", "Learning Space"],
-            "hypothesis_function": "Escape/Avoidance",
-            "hypothesis_item": "non-preferred literacy demands",
-            "incident_count": 7
-        },
-        "stu_jp2": {  # Oliver Smith - Y1 - attention seeking
-            "primary_behaviours": ["Verbal Aggression", "Property Destruction"],
-            "primary_antecedents": ["Attention - staff diverted to another student", "Peer - peer conflict/interaction"],
-            "primary_locations": ["Classroom", "Playground"],
-            "hypothesis_function": "Access to Attention",
-            "hypothesis_item": "staff attention when feeling ignored",
-            "incident_count": 6
-        },
-        "stu_py1": {  # Liam Carter - Y3 - escape focused
-            "primary_behaviours": ["Elopement", "Verbal Refusal", "Aggression (Adult)"],
-            "primary_antecedents": ["Demand - maths tasks", "Demand - completing a task independently"],
-            "primary_locations": ["Classroom", "Learning Space", "Withdrawal Room"],
-            "hypothesis_function": "Escape/Avoidance",
-            "hypothesis_item": "challenging academic demands",
-            "incident_count": 8
-        },
-        "stu_py2": {  # Ava Robinson - Y5 - sensory/tangible
-            "primary_behaviours": ["Verbal Refusal", "Property Destruction"],
-            "primary_antecedents": ["Sensory - environment too noisy/busy", "Tangible - denied access to preferred item"],
-            "primary_locations": ["Classroom", "Hall/Assembly Area"],
-            "hypothesis_function": "Access to Tangible",
-            "hypothesis_item": "preferred items or sensory regulation",
-            "incident_count": 5
-        },
-        "stu_sy1": {  # Isabella Garcia - Y7 - peer conflict focused
-            "primary_behaviours": ["Verbal Aggression", "Aggression (Peer)", "Elopement"],
-            "primary_antecedents": ["Peer - peer conflict/interaction", "Peer - negative peer feedback"],
-            "primary_locations": ["Classroom", "Playground", "Corridors"],
-            "hypothesis_function": "Escape/Avoidance",
-            "hypothesis_item": "negative peer interactions",
-            "incident_count": 7
-        },
-        "stu_sy2": {  # Ethan Davis - Y9 - escape/control focused
-            "primary_behaviours": ["Verbal Refusal", "Verbal Aggression", "Property Destruction"],
-            "primary_antecedents": ["Demand - given an instruction by staff", "Internal - ruminating on past events"],
-            "primary_locations": ["Classroom", "Learning Space", "Outdoors"],
-            "hypothesis_function": "Escape/Avoidance",
-            "hypothesis_item": "adult-directed demands",
-            "incident_count": 6
-        }
-    }
-    
-    # Generate incidents for each student
-    for student_id, pattern in student_patterns.items():
-        student = next((s for s in MOCK_STUDENTS if s["id"] == student_id), None)
-        if not student:
-            continue
-            
-        for i in range(pattern["incident_count"]):
-            # Vary dates over past 60 days
-            days_ago = random.randint(1, 60)
-            dt = datetime.now() - timedelta(days=days_ago)
-            
-            # Vary times throughout school day
-            hour = random.choices([9, 10, 11, 12, 13, 14, 15], weights=[12, 18, 15, 10, 12, 18, 15])[0]
-            dt = dt.replace(hour=hour, minute=random.randint(0, 59), second=0)
-            
-            # Use pattern-based selections with some variation
-            if random.random() < 0.7:  # 70% follow pattern
-                behaviour = random.choice(pattern["primary_behaviours"])
-                antecedent = random.choice(pattern["primary_antecedents"])
-                location = random.choice(pattern["primary_locations"])
-            else:  # 30% random for variation
-                behaviour = random.choice(BEHAVIOUR_TYPES)
-                antecedent = random.choice([a for a in ANTECEDENTS if not a.startswith("---")])
-                location = random.choice(LOCATIONS)
-            
-            # Severity distribution - ensure some are critical (3+)
-            if i < 2:  # First 2 incidents per student are critical
-                severity = random.choice([3, 4])
-            else:
-                severity = random.choices([1, 2, 3, 4], weights=[25, 40, 25, 10])[0]
-            
-            is_critical = severity >= 3
-            
-            incidents.append({
-                "id": str(uuid.uuid4()),
-                "student_id": student_id,
-                "student_name": student["name"],
-                "date": dt.date().isoformat(),
-                "time": dt.time().strftime("%H:%M:%S"),
-                "day": dt.strftime("%A"),
-                "session": get_session_from_time(dt.time()),
-                "location": location,
-                "behaviour_type": behaviour,
-                "antecedent": antecedent,
-                "intervention": random.sample(INTERVENTIONS, k=random.randint(1, 3)),
-                "severity": severity,
-                "reported_by": random.choice(MOCK_STAFF)["id"],
-                "description": f"Demo incident for {student['name']}",
-                "is_critical": is_critical,
-                "duration_minutes": random.randint(3, 20),
-                "hypothesis_function": pattern["hypothesis_function"],
-                "hypothesis_item": pattern["hypothesis_item"]
-            })
-    
-    return sorted(incidents, key=lambda x: x["date"], reverse=True)
-
-def generate_demo_critical_incidents():
-    """Generate demo critical incident records with full ABCH data"""
-    critical_incidents = []
-    
-    # Create 2-3 critical incidents per student
-    critical_data = [
-        # Emma Thompson - JP
-        {
-            "student_id": "stu_jp1",
-            "ABCH_primary": {
-                "location": "Classroom",
-                "context": "Asked to complete writing task, became overwhelmed",
-                "time": "09:30 AM",
-                "behaviour": "Threw chair, screamed, ran out of classroom",
-                "consequence": "Room cleared, student followed at safe distance",
-                "hypothesis": "Escape/Avoidance - overwhelming literacy demand"
-            },
-            "intended_outcomes": ["Access to Tangible", "Escape/Avoidance"],
-            "severity": 4
-        },
-        {
-            "student_id": "stu_jp1",
-            "ABCH_primary": {
-                "location": "Learning Space",
-                "context": "Transition from play to structured activity",
-                "time": "11:15 AM",
-                "behaviour": "Pushed staff member, kicked furniture",
-                "consequence": "Space cleared, calm voice used, waited for regulation",
-                "hypothesis": "Escape/Avoidance - transition difficulty"
-            },
-            "intended_outcomes": ["Escape/Avoidance"],
-            "severity": 3
-        },
-        # Oliver Smith - JP
-        {
-            "student_id": "stu_jp2",
-            "ABCH_primary": {
-                "location": "Playground",
-                "context": "Staff helping another student, Oliver wanted attention",
-                "time": "01:30 PM",
-                "behaviour": "Threw rocks at peers, verbal threats",
-                "consequence": "Immediate intervention, removed from area",
-                "hypothesis": "Access to Attention - feeling overlooked"
-            },
-            "intended_outcomes": ["Access to Attention"],
-            "severity": 4
-        },
-        {
-            "student_id": "stu_jp2",
-            "ABCH_primary": {
-                "location": "Classroom",
-                "context": "Group activity, not chosen as leader",
-                "time": "10:45 AM",
-                "behaviour": "Destroyed peer's work, verbal aggression",
-                "consequence": "Separated from group, 1:1 support provided",
-                "hypothesis": "Access to Attention - seeking recognition"
-            },
-            "intended_outcomes": ["Access to Attention", "Access to Tangible"],
-            "severity": 3
-        },
-        # Liam Carter - PY
-        {
-            "student_id": "stu_py1",
-            "ABCH_primary": {
-                "location": "Classroom",
-                "context": "Maths assessment, struggling with content",
-                "time": "09:45 AM",
-                "behaviour": "Flipped desk, attempted to leave building",
-                "consequence": "Building secured, leadership called",
-                "hypothesis": "Escape/Avoidance - academic frustration"
-            },
-            "intended_outcomes": ["Escape/Avoidance"],
-            "severity": 4
-        },
-        {
-            "student_id": "stu_py1",
-            "ABCH_primary": {
-                "location": "Withdrawal Room",
-                "context": "Asked to return to class after break",
-                "time": "02:00 PM",
-                "behaviour": "Punched wall, verbal abuse to staff",
-                "consequence": "Given space, parents contacted",
-                "hypothesis": "Escape/Avoidance - avoiding classroom return"
-            },
-            "intended_outcomes": ["Escape/Avoidance"],
-            "severity": 3
-        },
-        {
-            "student_id": "stu_py1",
-            "ABCH_primary": {
-                "location": "Learning Space",
-                "context": "Independent work task without support",
-                "time": "11:30 AM",
-                "behaviour": "Threw materials, grabbed staff arm",
-                "consequence": "CPI techniques used, incident documented",
-                "hypothesis": "Escape/Avoidance - feeling unsupported"
-            },
-            "intended_outcomes": ["Escape/Avoidance", "Access to Attention"],
-            "severity": 4
-        },
-        # Ava Robinson - PY
-        {
-            "student_id": "stu_py2",
-            "ABCH_primary": {
-                "location": "Hall/Assembly Area",
-                "context": "Whole school assembly, sensory overload",
-                "time": "09:15 AM",
-                "behaviour": "Screaming, attempted to run outside",
-                "consequence": "Escorted to quiet space, sensory tools provided",
-                "hypothesis": "Sensory regulation - overwhelmed by environment"
-            },
-            "intended_outcomes": ["Escape/Avoidance"],
-            "severity": 3
-        },
-        {
-            "student_id": "stu_py2",
-            "ABCH_primary": {
-                "location": "Classroom",
-                "context": "iPad taken away at end of allocated time",
-                "time": "02:30 PM",
-                "behaviour": "Threw iPad, hit staff member",
-                "consequence": "Room cleared, leadership notified",
-                "hypothesis": "Access to Tangible - denied preferred item"
-            },
-            "intended_outcomes": ["Access to Tangible"],
-            "severity": 4
-        },
-        # Isabella Garcia - SY
-        {
-            "student_id": "stu_sy1",
-            "ABCH_primary": {
-                "location": "Corridors",
-                "context": "Confrontation with peer about social media post",
-                "time": "12:45 PM",
-                "behaviour": "Physical altercation, verbal threats",
-                "consequence": "Students separated, parents contacted",
-                "hypothesis": "Escape/Avoidance - peer conflict escalation"
-            },
-            "intended_outcomes": ["Escape/Avoidance"],
-            "severity": 4
-        },
-        {
-            "student_id": "stu_sy1",
-            "ABCH_primary": {
-                "location": "Classroom",
-                "context": "Peer made negative comment about appearance",
-                "time": "10:00 AM",
-                "behaviour": "Left class, verbal aggression to peer",
-                "consequence": "Followed at distance, given space to regulate",
-                "hypothesis": "Escape/Avoidance - social rejection"
-            },
-            "intended_outcomes": ["Escape/Avoidance", "Access to Attention"],
-            "severity": 3
-        },
-        # Ethan Davis - SY
-        {
-            "student_id": "stu_sy2",
-            "ABCH_primary": {
-                "location": "Classroom",
-                "context": "Asked to put phone away multiple times",
-                "time": "09:30 AM",
-                "behaviour": "Verbal abuse to teacher, threw chair",
-                "consequence": "Room cleared, leadership intervention",
-                "hypothesis": "Escape/Avoidance - adult authority challenge"
-            },
-            "intended_outcomes": ["Escape/Avoidance", "Access to Tangible"],
-            "severity": 4
-        },
-        {
-            "student_id": "stu_sy2",
-            "ABCH_primary": {
-                "location": "Outdoors",
-                "context": "Ruminating about family issues, staff checked in",
-                "time": "01:15 PM",
-                "behaviour": "Punched fence, self-harm statements",
-                "consequence": "Wellbeing team notified, safety plan activated",
-                "hypothesis": "Internal regulation - emotional overwhelm"
-            },
-            "intended_outcomes": ["Escape/Avoidance"],
-            "severity": 4
-        },
-    ]
-    
-    for i, data in enumerate(critical_data):
-        student = next((s for s in MOCK_STUDENTS if s["id"] == data["student_id"]), None)
-        if not student:
-            continue
-            
-        days_ago = random.randint(5, 50)
-        created = datetime.now() - timedelta(days=days_ago)
-        
-        critical_incidents.append({
-            "id": str(uuid.uuid4()),
-            "student_id": data["student_id"],
-            "student_name": student["name"],
-            "ABCH_primary": data["ABCH_primary"],
-            "ABCH_continuation": [],
-            "intended_outcomes": data["intended_outcomes"],
-            "witnesses": ["Staff member present", "Other students in area"],
-            "injuries": "None reported" if data["severity"] < 4 else "Minor - no medical attention required",
-            "property_damage": "Minor" if random.random() > 0.5 else "None",
-            "police_contacted": False,
-            "police_reference": "",
-            "staff_completing": random.choice(MOCK_STAFF)["name"],
-            "created_at": created.isoformat(),
-            "severity": data["severity"]
-        })
-    
-    return critical_incidents
-
 def generate_mock_incidents(n=70):
-    """Legacy function - redirects to demo generator"""
-    return generate_demo_incidents()
+    incidents = []
+    weights = {"stu_sy1": 12, "stu_py1": 10, "stu_sy2": 9, "stu_jp1": 8, "stu_py2": 7}
+    pool = []
+    for stu in MOCK_STUDENTS:
+        pool.extend([stu] * weights.get(stu["id"], 5))
+    for _ in range(n):
+        stu = random.choice(pool)
+        sev = random.choices([1, 2, 3, 4, 5], weights=[20, 35, 25, 15, 5])[0]
+        dt = datetime.now() - timedelta(days=random.randint(0, 90))
+        dt = dt.replace(hour=random.choices([9,10,11,12,13,14,15], weights=[10,15,12,8,12,18,10])[0], 
+                       minute=random.randint(0,59), second=0)
+        incidents.append({
+            "id": str(uuid.uuid4()), "student_id": stu["id"], "student_name": stu["name"],
+            "date": dt.date().isoformat(), "time": dt.time().strftime("%H:%M:%S"),
+            "day": dt.strftime("%A"), "session": get_session_from_time(dt.time()),
+            "location": random.choice(LOCATIONS), "behaviour_type": random.choice(BEHAVIOUR_TYPES),
+            "antecedent": random.choice(ANTECEDENTS), 
+            "intervention": [random.choice(INTERVENTIONS)],  # Changed to list
+            "severity": sev, "reported_by": random.choice(MOCK_STAFF)["name"],
+            "description": "Mock incident", "is_critical": sev >= 3, "duration_minutes": random.randint(2, 25)
+        })
+    return incidents
 
 # PAGES
 def render_login_page():
     st.markdown("## 🔐 Staff Login")
-    
-    # DEMO CREDENTIALS INFO
-    st.info("""
-    🎭 **DEMO VERSION** - Use these credentials to explore:
-    
-    | Role | Email | Password |
-    |------|-------|----------|
-    | Admin | admin@example.com | admin123 |
-    | Staff (JP) | emily.jones@example.com | demo123 |
-    | Staff (PY) | daniel.lee@example.com | demo123 |
-    | Staff (SY) | sarah.chen@example.com | demo123 |
-    """)
 
     email = st.text_input("Email Address", placeholder="your.email@example.com", key="login_email")
     password = st.text_input("Password", type="password", placeholder="Enter password", key="login_pass")
@@ -2737,10 +1618,6 @@ def render_login_page():
 
 def render_landing_page():
     user = st.session_state.current_user or {}
-    
-    # DEMO BANNER
-    st.warning("🎭 **DEMO VERSION** - This app contains simulated data for demonstration purposes. All student names and incidents are fictional.")
-    
     st.markdown(f"### 👋 Welcome, {user.get('name', 'User')}")
     
     col1, col2 = st.columns([6, 1])
@@ -2798,9 +1675,11 @@ def render_program_students_page():
             with col2:
                 st.metric("Incidents", len(stu_incidents))
             with col3:
+                if st.button("📊 Dashboard", key=f"dash_{stu['id']}", use_container_width=True):
+                    go_to("student_dashboard", selected_student_id=stu["id"])
                 if st.button("📝 Log", key=f"log_{stu['id']}", use_container_width=True):
                     go_to("incident_log", selected_student_id=stu["id"])
-                if st.button("📊 Analysis", key=f"ana_{stu['id']}", use_container_width=True):
+                if st.button("📈 Analysis", key=f"ana_{stu['id']}", use_container_width=True):
                     go_to("student_analysis", selected_student_id=stu["id"])
 
 def render_incident_log_page():
@@ -2839,37 +1718,16 @@ def render_incident_log_page():
         st.markdown("---")
         st.stop()
     
-    # INCIDENT FORM - Split to show hypothesis before severity
-    st.markdown("### Log New Incident")
-    
-    # First section: Capture antecedent and behaviour for hypothesis generation
-    col1, col2 = st.columns(2)
-    with col1:
-        behaviour_select = st.selectbox("Behaviour Type *", [""] + BEHAVIOUR_TYPES, key="inc_beh_select")
-    with col2:
-        antecedent_select = st.selectbox("Antecedent/Trigger *", [""] + ANTECEDENTS, key="inc_ant_select")
-    
-    # Display hypothesis if both are selected
-    if behaviour_select and antecedent_select:
-        hyp_ai = generate_hypothesis_ai(antecedent_select, behaviour_select, "")
-        hypothesis_text = f"{hyp_ai['function']} {hyp_ai['item']}"
-        st.info(f"🧠 **Suggested Hypothesis:** {hypothesis_text}")
-        # Store for form submission
-        st.session_state.current_hypothesis = hyp_ai
-    else:
-        st.session_state.current_hypothesis = None
-    
-    # Main form with remaining fields
+    # INCIDENT FORM
     with st.form("incident_form", clear_on_submit=True):
         col1, col2 = st.columns(2)
         with col1:
-            inc_date = st.date_input("Date *", date.today(), key="inc_date", format="DD/MM/YYYY")
+            inc_date = st.date_input("Date *", date.today(), key="inc_date")
             inc_time = st.time_input("Time *", datetime.now().time(), key="inc_time")
             location = st.selectbox("Location *", [""] + LOCATIONS, key="inc_loc")
         with col2:
-            # Hidden fields to pass the pre-selected values
-            st.markdown(f"**Behaviour Type:** {behaviour_select if behaviour_select else 'Not selected'}")
-            st.markdown(f"**Antecedent/Trigger:** {antecedent_select if antecedent_select else 'Not selected'}")
+            behaviour = st.selectbox("Behaviour Type *", [""] + BEHAVIOUR_TYPES, key="inc_beh")
+            antecedent = st.selectbox("Antecedent/Trigger *", [""] + ANTECEDENTS, key="inc_ant")
             # MULTIPLE INTERVENTIONS
             interventions = st.multiselect("Interventions Used *", INTERVENTIONS, key="inc_ints")
         
@@ -2879,53 +1737,6 @@ def render_incident_log_page():
         manual_critical = st.checkbox("This incident requires a Critical Incident ABCH Form (regardless of severity)", key="manual_crit")
         submitted = st.form_submit_button("Submit Incident", type="primary")
     
-    if submitted:
-        behaviour = behaviour_select
-        antecedent = antecedent_select
-        if not location or not behaviour or not antecedent or not interventions:
-            st.error("Please complete all required fields marked with *")
-        else:
-            new_id = str(uuid.uuid4())
-            is_critical = (severity >= 3) or manual_critical
-            
-            # Use pre-generated hypothesis or generate new one
-            hyp_ai = st.session_state.get('current_hypothesis') or generate_hypothesis_ai(antecedent, behaviour, "")
-            hypothesis_text = f"{hyp_ai['function']} {hyp_ai['item']}"
-            
-            rec = {
-                "id": new_id, 
-                "student_id": student_id, 
-                "student_name": student["name"],
-                "date": inc_date.isoformat(), 
-                "time": inc_time.strftime("%H:%M:%S"),
-                "day": inc_date.strftime("%A"), 
-                "session": get_session_from_time(inc_time),
-                "location": location, 
-                "behaviour_type": behaviour, 
-                "antecedent": antecedent,
-                "intervention": interventions,
-                "severity": severity,
-                "reported_by": st.session_state.current_user["id"],
-                "duration_minutes": duration, 
-                "description": description or "", 
-                "is_critical": is_critical,
-                "hypothesis_function": hyp_ai['function'],
-                "hypothesis_item": hyp_ai['item']
-            }
-            
-            # SAVE TO DATABASE FIRST
-            if save_incident_to_db(rec):
-                # Then add to session state
-                st.session_state.incidents.append(rec)
-                st.success("✅ Incident logged successfully and saved to database")
-                
-                if is_critical:
-                    st.session_state.current_incident_id = new_id
-                    st.session_state.show_critical_prompt = True
-                    st.session_state.last_incident_info = {"severity": severity, "manual": manual_critical}
-                    st.rerun()
-            else:
-                st.error("❌ Failed to save incident to database. Please try again.")
 
 
 def render_critical_incident_page():
@@ -2956,15 +1767,14 @@ def render_critical_incident_page():
             st.markdown(f"**Student:** {student['name']}")
             st.markdown(f"**Grade:** {student['grade']}")
         with col2:
-            st.markdown(f"**Date:** {format_date_dmy(quick_inc['date'])}")
+            st.markdown(f"**Date:** {quick_inc['date']}")
             st.markdown(f"**Time:** {format_time_12hr(quick_inc['time'])}")
         with col3:
             st.markdown(f"**Location:** {quick_inc['location']}")
             st.markdown(f"**Session:** {quick_inc['session']}")
         with col4:
             st.markdown(f"**Severity:** {quick_inc['severity']}")
-        hypothesis_display = f"{quick_inc.get('hypothesis_function', '')} {quick_inc.get('hypothesis_item', '')}".strip() or 'N/A'
-        st.markdown(f"**Hypothesis:** {hypothesis_display}")
+        st.markdown(f"**Hypothesis:** {quick_inc.get('hypothesis', 'N/A')}")
     
     st.markdown("---")
     st.markdown("### ABCH Chronology")
@@ -3308,7 +2118,7 @@ def render_student_analysis_page():
             x=daily_quick["date_parsed"], 
             y=daily_quick["count"],
             name='Regular Incidents',
-            marker=dict(color='#4A90A4', line=dict(color='white', width=1)),
+            marker=dict(color='#3b82f6', line=dict(color='white', width=1)),
             text=daily_quick["count"],
             textposition='inside',
             textfont=dict(color='white', size=11, family='Arial Black'),
@@ -3385,7 +2195,7 @@ def render_student_analysis_page():
     
     fig2.add_trace(go.Bar(
         y=all_behaviours, x=quick_beh_counts, name='Regular', orientation='h',
-        marker=dict(color='#4A90A4', line=dict(color='white', width=1)),
+        marker=dict(color='#3b82f6', line=dict(color='white', width=1)),
         text=quick_beh_counts, textposition='inside',
         textfont=dict(color='white', size=11, family='Arial Black'),
         hovertemplate='<b>%{y}</b><br>Regular: %{x}<extra></extra>'
@@ -3458,7 +2268,7 @@ def render_student_analysis_page():
     
     fig3.add_trace(go.Bar(
         y=all_triggers, x=quick_ant_counts, name='Regular', orientation='h',
-        marker=dict(color='#4A90A4', line=dict(color='white', width=1)),
+        marker=dict(color='#3b82f6', line=dict(color='white', width=1)),
         text=quick_ant_counts, textposition='inside',
         textfont=dict(color='white', size=11, family='Arial Black')
     ))
@@ -3522,7 +2332,7 @@ def render_student_analysis_page():
         fig4.add_trace(go.Scatter(
             x=quick_only_df["date_parsed"], y=quick_only_df["severity"],
             mode='markers', name='Regular',
-            marker=dict(size=12, color='#4A90A4', opacity=0.7, line=dict(color='white', width=1.5)),
+            marker=dict(size=12, color='#3b82f6', opacity=0.7, line=dict(color='white', width=1.5)),
             hovertemplate='<b>Date:</b> %{x}<br><b>Severity:</b> %{y}<extra></extra>'
         ))
     
@@ -3600,7 +2410,7 @@ def render_student_analysis_page():
     
     fig5.add_trace(go.Bar(
         y=all_locations, x=quick_loc_counts, name='Regular', orientation='h',
-        marker=dict(color='#4A90A4', line=dict(color='white', width=1)),
+        marker=dict(color='#3b82f6', line=dict(color='white', width=1)),
         text=quick_loc_counts, textposition='inside',
         textfont=dict(color='white', size=11, family='Arial Black')
     ))
@@ -3670,7 +2480,7 @@ def render_student_analysis_page():
     
     fig6.add_trace(go.Bar(
         x=session_order, y=quick_session_counts, name='Regular',
-        marker=dict(color='#4A90A4', line=dict(color='white', width=1)),
+        marker=dict(color='#3b82f6', line=dict(color='white', width=1)),
         text=quick_session_counts, textposition='inside',
         textfont=dict(color='white', size=12, family='Arial Black')
     ))
@@ -3731,7 +2541,7 @@ def render_student_analysis_page():
     fig7 = go.Figure()
     fig7.add_trace(go.Bar(
         x=day_counts.index, y=day_counts.values,
-        marker=dict(color='#008080'),
+        marker=dict(color='#64748b'),
         text=day_counts.values, textposition='outside'
     ))
     fig7.update_layout(
@@ -3747,338 +2557,14 @@ def render_student_analysis_page():
                    "**Berry Street Relationship:** Strong connections reduce incidents.")
     st.markdown("---")
     
-    # ================================================================
-    # NEW: HYPOTHESIS/FUNCTION ANALYSIS
-    # ================================================================
-    
-    st.markdown("### 🎯 Behaviour Function Analysis")
-    st.caption("Understanding the purpose behind behaviours using Applied Behaviour Analysis (ABA)")
-    
-    # Analyse hypothesis patterns
-    if not quick_only_df.empty and 'hypothesis_function' in quick_only_df.columns:
-        # Function distribution
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("**Function Distribution**")
-            func_counts = quick_only_df['hypothesis_function'].value_counts()
-            
-            fig_func = go.Figure()
-            colors_func = ['#008080' if f == 'To avoid' else '#20B2AA' for f in func_counts.index]
-            fig_func.add_trace(go.Pie(
-                labels=func_counts.index,
-                values=func_counts.values,
-                marker=dict(colors=colors_func, line=dict(color='white', width=2)),
-                textinfo='label+percent',
-                textfont=dict(size=12, family='Arial'),
-                hole=0.4
-            ))
-            fig_func.update_layout(
-                height=280,
-                showlegend=False,
-                margin=dict(t=20, b=20, l=20, r=20),
-                paper_bgcolor='white'
-            )
-            st.plotly_chart(fig_func, use_container_width=True)
-        
-        with col2:
-            st.markdown("**What Student is Seeking**")
-            if 'hypothesis_item' in quick_only_df.columns:
-                item_counts = quick_only_df['hypothesis_item'].value_counts()
-                
-                fig_item = go.Figure()
-                fig_item.add_trace(go.Bar(
-                    x=item_counts.values,
-                    y=item_counts.index,
-                    orientation='h',
-                    marker=dict(color=['#4A90A4', '#6BB9A0', '#48D1CC', '#7FFFD4'][:len(item_counts)],
-                               line=dict(color='white', width=1)),
-                    text=item_counts.values,
-                    textposition='inside',
-                    textfont=dict(color='white', size=11, family='Arial Black')
-                ))
-                fig_item.update_layout(
-                    height=280,
-                    xaxis_title="<b>Count</b>",
-                    plot_bgcolor='white',
-                    paper_bgcolor='white',
-                    margin=dict(t=20, b=40, l=20, r=20),
-                    xaxis=dict(gridcolor='#e2e8f0', showline=True, linewidth=2, linecolor='#cbd5e1'),
-                    yaxis=dict(showline=True, linewidth=2, linecolor='#cbd5e1')
-                )
-                st.plotly_chart(fig_item, use_container_width=True)
-        
-        # Interpretation
-        primary_function = func_counts.index[0] if len(func_counts) > 0 else "Unknown"
-        primary_item = item_counts.index[0] if 'hypothesis_item' in quick_only_df.columns and len(item_counts) > 0 else "Unknown"
-        
-        with st.expander("💡 Clinical Interpretation (Behaviour Function)"):
-            st.markdown(f"""
-**Primary Hypothesis:** {primary_function} {primary_item}
-
-**What This Means:**
-- **{primary_function}** behaviours indicate the student is trying to {'escape or avoid something aversive' if primary_function == 'To avoid' else 'access or obtain something desired'}
-- **{primary_item}** focus suggests intervention should target {'reducing demands or modifying environment' if primary_item == 'Activity' else 'sensory regulation strategies' if primary_item == 'Sensory' else 'increasing positive attention and connection' if primary_item == 'Attention' else 'teaching appropriate requesting skills'}
-
-**Berry Street Connection:**
-- {'**BODY Domain:** Focus on regulation before challenging activities' if primary_function == 'To avoid' else '**RELATIONSHIP Domain:** Increase positive attention and connection opportunities'}
-            """)
-    
-    st.markdown("---")
-    
-    # ================================================================
-    # NEW: AUSTRALIAN CURRICULUM CAPABILITIES SECTION
-    # ================================================================
-    
-    st.markdown("### 🎓 Australian Curriculum - General Capabilities Analysis")
-    st.caption("Linking behaviour support to curriculum outcomes (Personal and Social Capability focus)")
+    # CLINICAL SUMMARY
+    st.markdown("### 🧠 Clinical Summary")
+    st.caption("Evidence-based interpretation using ABA, Trauma-Informed Practice, Berry Street Education Model, and CPI principles")
     
     top_beh = full_df["behaviour_type"].mode()[0] if len(full_df) > 0 else "Unknown"
     top_ant = full_df["antecedent"].mode()[0] if len(full_df) > 0 else "Unknown"
     top_loc = full_df["location"].mode()[0] if len(full_df) > 0 else "Unknown"
     top_session = full_df["session"].mode()[0] if len(full_df) > 0 else "Unknown"
-    
-    # Get AC capability information
-    ac_info = get_ac_capability_for_behaviour(top_beh)
-    ant_ac_info = get_ac_skills_for_antecedent(top_ant)
-    
-    if ac_info:
-        col1, col2 = st.columns([2, 1])
-        
-        with col1:
-            st.markdown(f"""
-<div style='background: linear-gradient(135deg, #E8F4F8 0%, #D4EEF4 100%); padding: 1.5rem; border-radius: 10px; border-left: 4px solid {ac_info['color']}; margin-bottom: 1rem;'>
-    <h4 style='color: #008080; margin: 0 0 0.5rem 0;'>Primary Capability: {ac_info['name']}</h4>
-    <p style='margin: 0; color: #333;'><strong>Focus Elements:</strong> {', '.join(ac_info['elements'])}</p>
-</div>
-            """, unsafe_allow_html=True)
-            
-            st.markdown("**Skills to Develop (AC Aligned):**")
-            for skill in ac_info['skills_to_develop']:
-                st.markdown(f"• {skill}")
-            
-            st.markdown("**Curriculum Descriptors:**")
-            for desc in ac_info['ac_descriptors']:
-                st.markdown(f"• _{desc}_")
-        
-        with col2:
-            # AC Capability visual
-            st.markdown("**Capability Focus**")
-            
-            # Create a simple gauge/indicator
-            fig_ac = go.Figure()
-            
-            capabilities = ["PSC", "CCT", "EU", "ICU"]
-            cap_names = ["Personal & Social", "Critical Thinking", "Ethical", "Intercultural"]
-            cap_colors = ['#4A90A4', '#6BB9A0', '#E8B960', '#D4A574']
-            
-            # Highlight the primary capability
-            values = [1 if c == ac_info['code'] else 0.3 for c in capabilities]
-            
-            fig_ac.add_trace(go.Bar(
-                x=cap_names,
-                y=values,
-                marker=dict(color=cap_colors, line=dict(color='white', width=1)),
-                text=['PRIMARY' if v == 1 else '' for v in values],
-                textposition='inside',
-                textfont=dict(color='white', size=10, family='Arial Black')
-            ))
-            fig_ac.update_layout(
-                height=200,
-                showlegend=False,
-                yaxis=dict(visible=False),
-                xaxis=dict(tickangle=-45),
-                margin=dict(t=10, b=60, l=10, r=10),
-                plot_bgcolor='white',
-                paper_bgcolor='white'
-            )
-            st.plotly_chart(fig_ac, use_container_width=True)
-    
-    # Generate AC-aligned learning goals
-    learning_goals = generate_ac_learning_goals(top_beh, top_ant, student['grade'])
-    
-    st.markdown("**Suggested Learning Goals (Grade-Appropriate):**")
-    goals_table = []
-    for goal in learning_goals:
-        goals_table.append({
-            "Skill Focus": goal['skill'],
-            "Learning Goal": goal['goal'],
-            "AC Descriptor": goal['ac_descriptor'],
-            "Complexity": goal['complexity'].title()
-        })
-    
-    if goals_table:
-        goals_df = pd.DataFrame(goals_table)
-        st.dataframe(goals_df, hide_index=True, use_container_width=True)
-    
-    with st.expander("💡 Understanding AC General Capabilities"):
-        st.markdown("""
-**Personal and Social Capability** is developed when students:
-- Learn to understand themselves and others
-- Manage their emotions, relationships and lives
-- Develop resilience and a sense of self-worth
-- Work effectively with others
-- Make responsible decisions
-
-**Connection to Behaviour Support:**
-All behaviour is an attempt to meet a need. When we support students to develop Personal and Social Capability skills, we give them the tools to meet their needs in prosocial ways. This is not just behaviour management - it is curriculum-aligned skill development.
-
-**Assessment Note:** Progress in these capabilities should be documented alongside behaviour data to show growth in underlying skills, not just reduction in incidents.
-        """)
-    
-    st.markdown("---")
-    
-    # ================================================================
-    # NEW: INTERVENTION EFFECTIVENESS ANALYSIS
-    # ================================================================
-    
-    st.markdown("### 💊 Intervention Analysis")
-    st.caption("Which strategies are being used and their connection to capability development")
-    
-    if not quick_only_df.empty and 'intervention' in quick_only_df.columns:
-        # Flatten interventions
-        all_interventions = []
-        for interventions in quick_only_df['intervention']:
-            if isinstance(interventions, list):
-                all_interventions.extend(interventions)
-            elif isinstance(interventions, str):
-                all_interventions.append(interventions)
-        
-        if all_interventions:
-            intervention_counts = pd.Series(all_interventions).value_counts()
-            
-            col1, col2 = st.columns([3, 2])
-            
-            with col1:
-                fig_int = go.Figure()
-                fig_int.add_trace(go.Bar(
-                    y=intervention_counts.index[:8],
-                    x=intervention_counts.values[:8],
-                    orientation='h',
-                    marker=dict(
-                        color=['#008080', '#20B2AA', '#48D1CC', '#4A90A4', '#6BB9A0', '#7FFFD4', '#40E0D0', '#00CED1'][:len(intervention_counts)],
-                        line=dict(color='white', width=1)
-                    ),
-                    text=intervention_counts.values[:8],
-                    textposition='inside',
-                    textfont=dict(color='white', size=11, family='Arial Black')
-                ))
-                fig_int.update_layout(
-                    height=300,
-                    xaxis_title="<b>Times Used</b>",
-                    plot_bgcolor='white',
-                    paper_bgcolor='white',
-                    margin=dict(t=20, b=40, l=20, r=20),
-                    xaxis=dict(gridcolor='#e2e8f0', showline=True, linewidth=2, linecolor='#cbd5e1'),
-                    yaxis=dict(showline=True, linewidth=2, linecolor='#cbd5e1')
-                )
-                st.plotly_chart(fig_int, use_container_width=True)
-            
-            with col2:
-                st.markdown("**Intervention-Capability Alignment**")
-                
-                # Get AC alignment for top interventions
-                top_interventions = intervention_counts.head(4).index.tolist()
-                alignments = get_intervention_ac_alignment(top_interventions)
-                
-                for align in alignments:
-                    st.markdown(f"""
-<div style='background: #f8f9fa; padding: 0.8rem; border-radius: 6px; margin-bottom: 0.5rem; border-left: 3px solid #008080;'>
-    <strong style='color: #008080;'>{align['intervention']}</strong><br>
-    <small style='color: #666;'>{align['capability']} - {align['element']}</small><br>
-    <small style='color: #333;'>Supports: {align['supports']}</small>
-</div>
-                    """, unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    # ================================================================
-    # NEW: WEEK-OVER-WEEK TREND ANALYSIS
-    # ================================================================
-    
-    st.markdown("### 📈 Weekly Trend Analysis")
-    st.caption("Tracking progress over time to inform intervention adjustments")
-    
-    if len(full_df) >= 7:
-        full_df['week'] = full_df['date_parsed'].dt.isocalendar().week
-        weekly_stats = full_df.groupby('week').agg({
-            'severity': ['count', 'mean'],
-            'incident_type': lambda x: (x == 'Critical').sum()
-        }).reset_index()
-        weekly_stats.columns = ['Week', 'Total Incidents', 'Avg Severity', 'Critical Count']
-        
-        if len(weekly_stats) >= 2:
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                fig_weekly = go.Figure()
-                fig_weekly.add_trace(go.Scatter(
-                    x=weekly_stats['Week'],
-                    y=weekly_stats['Total Incidents'],
-                    mode='lines+markers',
-                    name='Total Incidents',
-                    line=dict(color='#008080', width=3),
-                    marker=dict(size=10, color='#008080', line=dict(color='white', width=2))
-                ))
-                fig_weekly.add_trace(go.Scatter(
-                    x=weekly_stats['Week'],
-                    y=weekly_stats['Critical Count'],
-                    mode='lines+markers',
-                    name='Critical Incidents',
-                    line=dict(color='#DC3545', width=3, dash='dash'),
-                    marker=dict(size=10, color='#DC3545', symbol='diamond', line=dict(color='white', width=2))
-                ))
-                fig_weekly.update_layout(
-                    height=280,
-                    xaxis_title="<b>Week Number</b>",
-                    yaxis_title="<b>Count</b>",
-                    plot_bgcolor='white',
-                    paper_bgcolor='white',
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                    xaxis=dict(gridcolor='#e2e8f0', showline=True, linewidth=2, linecolor='#cbd5e1'),
-                    yaxis=dict(gridcolor='#e2e8f0', showline=True, linewidth=2, linecolor='#cbd5e1')
-                )
-                st.plotly_chart(fig_weekly, use_container_width=True)
-            
-            with col2:
-                # Week-over-week change
-                if len(weekly_stats) >= 2:
-                    last_week = weekly_stats.iloc[-1]
-                    prev_week = weekly_stats.iloc[-2]
-                    
-                    incident_change = last_week['Total Incidents'] - prev_week['Total Incidents']
-                    severity_change = last_week['Avg Severity'] - prev_week['Avg Severity']
-                    
-                    st.markdown("**Week-over-Week Change**")
-                    
-                    col_a, col_b = st.columns(2)
-                    with col_a:
-                        delta_color = "inverse" if incident_change <= 0 else "normal"
-                        st.metric("Incidents", int(last_week['Total Incidents']), 
-                                 delta=f"{int(incident_change):+d}", delta_color=delta_color)
-                    with col_b:
-                        delta_color = "inverse" if severity_change <= 0 else "normal"
-                        st.metric("Avg Severity", f"{last_week['Avg Severity']:.1f}",
-                                 delta=f"{severity_change:+.1f}", delta_color=delta_color)
-                    
-                    # Trend interpretation
-                    if incident_change < 0 and severity_change < 0:
-                        st.success("📉 **Improving:** Both incidents and severity decreasing")
-                    elif incident_change > 0 and severity_change > 0:
-                        st.error("📈 **Concern:** Both incidents and severity increasing")
-                    elif incident_change < 0:
-                        st.info("📊 **Mixed:** Fewer incidents but severity unchanged/increasing")
-                    else:
-                        st.warning("📊 **Monitor:** Patterns require continued observation")
-    
-    st.markdown("---")
-    
-    # ================================================================
-    # ENHANCED CLINICAL SUMMARY
-    # ================================================================
-    
-    st.markdown("### 🧠 Clinical Summary & AC-Aligned Recommendations")
-    st.caption("Evidence-based interpretation using ABA, Berry Street, CPI, and Australian Curriculum frameworks")
     
     recent = full_df.tail(7)
     risk_score = min(100, int(
@@ -4088,54 +2574,24 @@ All behaviour is an attempt to meet a need. When we support students to develop 
     ))
     risk_level = "LOW" if risk_score < 30 else "MODERATE" if risk_score < 60 else "HIGH"
     
-    col1, col2 = st.columns([2, 1])
+    st.info(f"""
+    **Key Patterns Identified:**
+    - Primary behaviour: **{top_beh}**
+    - Main trigger: **{top_ant}**
+    - Hotspot location: **{top_loc}**
+    - Peak time: **{top_session}**
+    - Risk Level: **{risk_level}** ({risk_score}/100)
     
-    with col1:
-        st.info(f"""
-**Key Patterns Identified:**
-- Primary behaviour: **{top_beh}**
-- Main trigger: **{top_ant}**
-- Hotspot location: **{top_loc}**
-- Peak time: **{top_session}**
-- Risk Level: **{risk_level}** ({risk_score}/100)
-
-**Primary AC Capability Focus:** {ac_info['name'] if ac_info else 'Personal and Social Capability'}
-**Berry Street Focus:** Body (regulation) and Relationship (connection) domains are foundation.
-        """)
-    
-    with col2:
-        # Risk gauge
-        risk_color = '#28A745' if risk_score < 30 else '#FFC107' if risk_score < 60 else '#DC3545'
-        st.markdown(f"""
-<div style='text-align: center; padding: 1rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px;'>
-    <div style='font-size: 3rem; font-weight: bold; color: {risk_color};'>{risk_score}</div>
-    <div style='font-size: 0.9rem; color: #666;'>Risk Score</div>
-    <div style='font-size: 1.2rem; font-weight: bold; color: {risk_color};'>{risk_level}</div>
-</div>
-        """, unsafe_allow_html=True)
+    **Berry Street Focus:** Body (regulation) and Relationship (connection) domains are foundation.
+    """)
     
     st.success(f"""
-**Evidence-Based Recommendations (AC-Aligned):**
-
-**1. Body Domain (PSC: Self-management)**
-- Regulated start before {top_session} session
-- Breathing exercises and movement breaks
-- *AC Goal: "Express emotions appropriately"*
-
-**2. Relationship Domain (PSC: Social awareness & management)**
-- Key adult check-in each morning
-- Acknowledgment of feelings before demands
-- *AC Goal: "Develop positive relationships"*
-
-**3. Stamina Domain (PSC: Self-management)**
-- Teach help-seeking using visual supports
-- Practice requesting breaks in calm moments
-- *AC Goal: "Persist when faced with challenges"*
-
-**4. SMART Goal (AC-Aligned):**
-Over 5 weeks, {student['name']} will use a help-seeking strategy (e.g., break card, signal to adult) in 4 out of 5 opportunities when experiencing triggers related to '{top_ant[:30]}...', with visual and verbal support.
-
-*This goal addresses PSC element: "Work independently and show initiative"*
+    **Evidence-Based Recommendations:**
+    
+    **1. Body Domain:** Regulated start before {top_session}, breathing exercises, movement breaks
+    **2. Relationship Domain:** Key adult check-in, acknowledgment of feelings, co-regulation
+    **3. Stamina Domain:** Teach help-seeking, practice requesting breaks
+    **4. SMART Goal:** Over 5 weeks, use help-seeking strategy in 4/5 opportunities
     """)
     
     st.markdown("---")
@@ -4181,6 +2637,170 @@ Over 5 weeks, {student['name']} will use a help-seeking strategy (e.g., break ca
 
 
 
+
+def render_student_dashboard():
+    """Quick visual dashboard for student overview"""
+    student_id = st.session_state.get("selected_student_id")
+    student = get_student(student_id)
+    if not student:
+        st.error("No student selected")
+        return
+    
+    st.markdown(f"## 📊 Dashboard — {student['name']}")
+    
+    # Navigation
+    col1, col2, col3 = st.columns([2, 1, 1])
+    with col1:
+        if st.button("⬅ Back to Students", key="back_dash"):
+            go_to("program_students", selected_program=student["program"])
+    with col2:
+        if st.button("📝 Log Incident", key="log_dash"):
+            go_to("incident_log", selected_student_id=student_id)
+    with col3:
+        if st.button("📈 Full Analysis", key="analysis_dash"):
+            go_to("student_analysis", selected_student_id=student_id)
+    
+    st.markdown("---")
+    
+    incidents = [i for i in st.session_state.incidents if i["student_id"] == student_id]
+    critical = [c for c in st.session_state.critical_incidents if c["student_id"] == student_id]
+    
+    if not incidents and not critical:
+        st.info("📋 No incident data yet. Click 'Log Incident' to start tracking.")
+        return
+    
+    quick_df = pd.DataFrame(incidents) if incidents else pd.DataFrame()
+    crit_df = pd.DataFrame(critical) if critical else pd.DataFrame()
+    
+    if not quick_df.empty:
+        quick_df["incident_type"] = "Quick"
+        quick_df["date_parsed"] = pd.to_datetime(quick_df["date"])
+    
+    if not crit_df.empty:
+        crit_df["incident_type"] = "Critical"
+        crit_df["date_parsed"] = pd.to_datetime(crit_df.get("created_at", datetime.now().isoformat()))
+        crit_df["severity"] = 5
+    
+    full_df = pd.concat([quick_df, crit_df], ignore_index=True).sort_values("date_parsed") if not quick_df.empty or not crit_df.empty else pd.DataFrame()
+    
+    total_incidents = len(full_df)
+    critical_count = len(full_df[full_df["incident_type"] == "Critical"])
+    avg_severity = full_df["severity"].mean() if "severity" in full_df.columns else 0
+    
+    week_ago = datetime.now() - timedelta(days=7)
+    recent_incidents = len(full_df[full_df["date_parsed"] >= week_ago]) if not full_df.empty else 0
+    
+    risk_score = min(100, int(
+        (recent_incidents / 7 * 15) +
+        (avg_severity * 10) +
+        (critical_count / max(total_incidents, 1) * 40)
+    ))
+    
+    if risk_score < 30:
+        risk_level = "LOW"
+        risk_color = "#10b981"
+        risk_emoji = "🟢"
+    elif risk_score < 60:
+        risk_level = "MODERATE"
+        risk_color = "#f59e0b"
+        risk_emoji = "🟡"
+    else:
+        risk_level = "HIGH"
+        risk_color = "#ef4444"
+        risk_emoji = "🔴"
+    
+    st.markdown("### 📈 Key Metrics")
+    col1, col2, col3, col4, col5 = st.columns(5)
+    
+    with col1:
+        st.metric("Total Incidents", total_incidents)
+    with col2:
+        st.metric("Critical", critical_count, delta=f"{(critical_count/total_incidents*100):.0f}%" if total_incidents > 0 else "0%")
+    with col3:
+        st.metric("Avg Severity", f"{avg_severity:.1f}/5")
+    with col4:
+        st.metric("Last 7 Days", recent_incidents)
+    with col5:
+        st.markdown(f"<div style='text-align: center; padding: 1rem; background: white; border-radius: 8px; border: 2px solid {risk_color};'>"
+                   f"<div style='font-size: 2rem;'>{risk_emoji}</div>"
+                   f"<div style='font-size: 0.875rem; color: #64748b; font-weight: 600;'>RISK LEVEL</div>"
+                   f"<div style='font-size: 1.5rem; font-weight: 700; color: {risk_color};'>{risk_level}</div>"
+                   f"<div style='font-size: 0.75rem; color: #64748b;'>{risk_score}/100</div>"
+                   f"</div>", unsafe_allow_html=True)
+    
+    st.markdown("---")
+    st.markdown("### 📊 Visual Summary")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### Daily Trend (Last 30 Days)")
+        if not full_df.empty:
+            thirty_days_ago = datetime.now() - timedelta(days=30)
+            recent_df = full_df[full_df["date_parsed"] >= thirty_days_ago]
+            daily = recent_df.groupby(recent_df["date_parsed"].dt.date).size().reset_index(name="count")
+            
+            fig = go.Figure()
+            fig.add_trace(go.Bar(x=daily["date_parsed"], y=daily["count"], marker=dict(color='#334155')))
+            fig.update_layout(height=250, showlegend=False, plot_bgcolor='white', paper_bgcolor='white',
+                            margin=dict(l=20, r=20, t=20, b=20))
+            st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        st.markdown("#### Top 5 Behaviours")
+        if not full_df.empty and "behaviour_type" in full_df.columns:
+            beh_counts = full_df["behaviour_type"].value_counts().head(5)
+            fig = go.Figure()
+            fig.add_trace(go.Bar(y=beh_counts.index, x=beh_counts.values, orientation='h', marker=dict(color='#475569')))
+            fig.update_layout(height=250, showlegend=False, plot_bgcolor='white', paper_bgcolor='white',
+                            margin=dict(l=20, r=20, t=20, b=20))
+            st.plotly_chart(fig, use_container_width=True)
+    
+    st.markdown("---")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### 🎯 Key Patterns")
+        if not full_df.empty:
+            top_beh = full_df["behaviour_type"].mode()[0] if "behaviour_type" in full_df.columns else "Unknown"
+            top_ant = full_df["antecedent"].mode()[0] if "antecedent" in full_df.columns else "Unknown"
+            top_loc = full_df["location"].mode()[0] if "location" in full_df.columns else "Unknown"
+            top_session = full_df["session"].mode()[0] if "session" in full_df.columns else "Unknown"
+            st.markdown(f"- **Primary Behaviour:** {top_beh}\n- **Main Trigger:** {top_ant}\n- **Hotspot:** {top_loc}\n- **Peak Time:** {top_session}")
+    
+    with col2:
+        st.markdown("### 📋 Recent Activity")
+        if not full_df.empty:
+            recent_5 = full_df.tail(5).sort_values("date_parsed", ascending=False)
+            for _, inc in recent_5.iterrows():
+                date_str = inc["date_parsed"].strftime("%d/%m")
+                sev = inc.get("severity", "?")
+                emoji = "🔴" if inc.get("incident_type") == "Critical" else "🟡" if sev >= 3 else "🟢"
+                st.markdown(f"{emoji} **{date_str}** - Sev {sev}")
+    
+    st.markdown("---")
+    st.markdown("### 💡 Quick Recommendations")
+    
+    if risk_level == "HIGH":
+        st.error("**⚠️ HIGH RISK**\n- Schedule urgent case review\n- Update safety plan\n- Daily check-ins")
+    elif risk_level == "MODERATE":
+        st.warning("**⚠️ MODERATE RISK**\n- Weekly review\n- Enhanced monitoring\n- Proactive strategies")
+    else:
+        st.success("**✅ LOW RISK**\n- Maintain supports\n- Continue monitoring\n- Celebrate progress")
+    
+    st.markdown("---")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("📝 Log New Incident", type="primary", use_container_width=True, key="dash_log_btn"):
+            go_to("incident_log", selected_student_id=student_id)
+    with col2:
+        if st.button("📈 Full Analysis", use_container_width=True, key="dash_analysis_btn"):
+            go_to("student_analysis", selected_student_id=student_id)
+    with col3:
+        if st.button("⬅ Back", use_container_width=True, key="dash_back_btn"):
+            go_to("program_students", selected_program=student["program"])
+
+
+
 def render_admin_portal():
     """Admin portal for managing students and placement dates"""
     if st.session_state.current_user.get("role") != "ADM":
@@ -4210,48 +2830,82 @@ def render_admin_portal():
                 col1, col2, col3, col4 = st.columns(4)
                 
                 with col1:
-                    new_first_name = st.text_input("First Name *", placeholder="John")
-                    new_last_name = st.text_input("Last Name *", placeholder="Smith")
+                    new_name = st.text_input("Student Name *", placeholder="First L.")
+                    new_grade = st.selectbox("Grade *", ["R", "Y1", "Y2", "Y3", "Y4", "Y5", "Y6", "Y7", "Y8", "Y9", "Y10", "Y11", "Y12"])
                 
                 with col2:
-                    new_grade = st.selectbox("Grade *", ["R", "Y1", "Y2", "Y3", "Y4", "Y5", "Y6", "Y7", "Y8", "Y9", "Y10", "Y11", "Y12"])
                     new_edid = st.text_input("EDID *", placeholder="ED123456")
+                    new_dob = st.date_input("Date of Birth *", value=date(2015, 1, 1))
                 
                 with col3:
-                    new_dob = st.date_input("Date of Birth *", value=date(2015, 1, 1), format="DD/MM/YYYY")
                     new_program = st.selectbox("Program *", ["JP", "PY", "SY"])
+                    new_placement_start = st.date_input("Placement Start Date *", value=date.today())
                 
                 with col4:
-                    new_placement_start = st.date_input("Placement Start Date *", value=date.today(), format="DD/MM/YYYY")
-                    new_placement_end = st.date_input("Placement End Date (Optional)", value=None, format="DD/MM/YYYY")
+                    st.write("")  # Spacer
+                    new_placement_end = st.date_input("Placement End Date (Optional)", value=None)
                 
                 submitted = st.form_submit_button("Add Student", type="primary")
                 
-                if submitted:
-                    if new_first_name and new_last_name and new_grade and new_program and new_edid:
-                        full_name = f"{new_first_name} {new_last_name}"
-                        new_student = {
-                            "id": f"stu_{uuid.uuid4().hex[:8]}",
-                            "first_name": new_first_name.strip(),
-                            "last_name": new_last_name.strip(),
-                            "name": full_name.strip(),
-                            "grade": new_grade,
-                            "dob": new_dob.isoformat(),
-                            "edid": new_edid,
-                            "program": new_program,
-                            "placement_start": new_placement_start.isoformat(),
-                            "placement_end": new_placement_end.isoformat() if new_placement_end else None
-                        }
-                        
-                        # SAVE TO DATABASE FIRST
-                        if save_student_to_db(new_student):
-                            st.session_state.students.append(new_student)
-                            st.success(f"✅ Added {full_name} (EDID: {new_edid}) to {PROGRAM_NAMES[new_program]}")
-                            st.rerun()
-                        else:
-                            st.error("❌ Failed to save student to database")
+              # FIXED INCIDENT LOGGING WITH DATABASE PERSISTENCE
+# Replace the incident submission section in render_incident_log_page()
+
+# Find this section (around line 1550-1620 in your file):
+# The part that starts with: if submitted:
+
+# REPLACE WITH THIS:
+
+    if submitted:
+        if not location or not behaviour or not antecedent or not interventions:
+            st.error("Please complete all required fields marked with *")
+        else:
+            new_id = str(uuid.uuid4())
+            is_critical = (severity >= 3) or manual_critical
+            
+            # Generate AI hypothesis
+            hyp_ai = generate_hypothesis_ai(antecedent, behaviour, "")
+            hypothesis_text = f"{hyp_ai['function']} {hyp_ai['item']}"
+            
+            rec = {
+                "id": new_id, 
+                "student_id": student_id, 
+                "student_name": student["name"],
+                "date": inc_date.isoformat(), 
+                "time": inc_time.strftime("%H:%M:%S"),
+                "day": inc_date.strftime("%A"), 
+                "session": get_session_from_time(inc_time),
+                "location": location, 
+                "behaviour_type": behaviour, 
+                "antecedent": antecedent,
+                "intervention": interventions,  # Save as list
+                "severity": severity,
+                "reported_by": st.session_state.current_user["id"],  # Save staff ID
+                "duration_minutes": duration, 
+                "description": description or "", 
+                "is_critical": is_critical,
+                "hypothesis_function": hyp_ai['function'],
+                "hypothesis_item": hyp_ai['item']
+            }
+            
+            # SAVE TO DATABASE FIRST
+            if save_incident_to_db(rec):
+                # Then add to session state
+                st.session_state.incidents.append(rec)
+                st.success("✅ Incident logged successfully and saved to database")
+                
+                if is_critical:
+                    st.session_state.current_incident_id = new_id
+                    st.session_state.show_critical_prompt = True
+                    st.session_state.last_incident_info = {"severity": severity, "manual": manual_critical}
+                    st.rerun()
+            else:
+                st.error("❌ Failed to save incident to database. Please try again.")
+
+                        st.session_state.students.append(new_student)
+                        st.success(f"✅ Added {new_name} (EDID: {new_edid}) to {PROGRAM_NAMES[new_program]}")
+                        st.rerun()
                     else:
-                        st.error("Please complete all required fields (First Name, Last Name, Grade, EDID, Program)")
+                        st.error("Please complete all required fields (Name, Grade, EDID, Program)")
         
         st.markdown("---")
         
@@ -4312,42 +2966,23 @@ def render_admin_portal():
                             edit_col1, edit_col2 = st.columns(2)
                             
                             with edit_col1:
-                                edit_first_name = st.text_input("First Name", 
-                                                               value=student.get('first_name', student['name'].split()[0] if student['name'] else ''),
-                                                               key=f"edit_first_{student['id']}")
-                                edit_last_name = st.text_input("Last Name",
-                                                              value=student.get('last_name', ' '.join(student['name'].split()[1:]) if len(student['name'].split()) > 1 else ''),
-                                                              key=f"edit_last_{student['id']}")
                                 # Use existing date or default to today
                                 default_start = datetime.fromisoformat(student['placement_start']).date() if student.get('placement_start') else date.today()
                                 edit_start = st.date_input("Placement Start", 
                                                           value=default_start,
-                                                          key=f"edit_start_{student['id']}",
-                                                          format="DD/MM/YYYY")
+                                                          key=f"edit_start_{student['id']}")
                             
                             with edit_col2:
-                                edit_edid = st.text_input("EDID", value=student.get('edid', ''), key=f"edit_edid_{student['id']}")
-                                edit_grade = st.selectbox("Grade", 
-                                                         ["R", "Y1", "Y2", "Y3", "Y4", "Y5", "Y6", "Y7", "Y8", "Y9", "Y10", "Y11", "Y12"],
-                                                         index=["R", "Y1", "Y2", "Y3", "Y4", "Y5", "Y6", "Y7", "Y8", "Y9", "Y10", "Y11", "Y12"].index(student['grade']) if student['grade'] in ["R", "Y1", "Y2", "Y3", "Y4", "Y5", "Y6", "Y7", "Y8", "Y9", "Y10", "Y11", "Y12"] else 0,
-                                                         key=f"edit_grade_{student['id']}")
                                 current_end = datetime.fromisoformat(student['placement_end']).date() if student.get('placement_end') else None
                                 edit_end = st.date_input("Placement End (None = Ongoing)",
                                                         value=current_end,
-                                                        key=f"edit_end_{student['id']}",
-                                                        format="DD/MM/YYYY")
+                                                        key=f"edit_end_{student['id']}")
                             
                             col_save, col_cancel = st.columns(2)
                             with col_save:
                                 if st.form_submit_button("Save Changes", type="primary"):
-                                    student['first_name'] = edit_first_name.strip()
-                                    student['last_name'] = edit_last_name.strip()
-                                    student['name'] = f"{edit_first_name} {edit_last_name}".strip()
-                                    student['edid'] = edit_edid
-                                    student['grade'] = edit_grade
                                     student['placement_start'] = edit_start.isoformat()
                                     student['placement_end'] = edit_end.isoformat() if edit_end else None
-                                    save_student_to_db(student)
                                     st.session_state.editing_student = None
                                     st.success("✅ Updated")
                                     st.rerun()
@@ -4396,8 +3031,7 @@ def render_admin_portal():
                 col1, col2 = st.columns(2)
                 
                 with col1:
-                    staff_first_name = st.text_input("First Name *", placeholder="Jane")
-                    staff_last_name = st.text_input("Last Name *", placeholder="Smith")
+                    staff_name = st.text_input("Full Name *", placeholder="Jane Smith")
                     staff_email = st.text_input("Email Address *", placeholder="jane.smith@school.edu.au", 
                                                help="Will be used as username and for critical incident notifications")
                     staff_password = st.text_input("Initial Password *", type="password", value="demo123")
@@ -4414,17 +3048,14 @@ def render_admin_portal():
                 submit_staff = st.form_submit_button("Add Staff Member", type="primary")
                 
                 if submit_staff:
-                    if staff_first_name and staff_last_name and staff_email and staff_password and staff_role:
-                        staff_full_name = f"{staff_first_name} {staff_last_name}"
+                    if staff_name and staff_email and staff_password and staff_role:
                         # Check if email already exists
                         if any(s.get("email", "").lower() == staff_email.lower() for s in st.session_state.staff):
                             st.error(f"❌ Email {staff_email} already exists")
                         else:
                             new_staff = {
                                 "id": f"staff_{uuid.uuid4().hex[:8]}",
-                                "first_name": staff_first_name.strip(),
-                                "last_name": staff_last_name.strip(),
-                                "name": staff_full_name.strip(),
+                                "name": staff_name,
                                 "email": staff_email.lower().strip(),
                                 "password": staff_password,
                                 "role": staff_role,
@@ -4437,13 +3068,11 @@ def render_admin_portal():
                             # Save to database first
                             if save_staff_to_db(new_staff):
                                 st.session_state.staff.append(new_staff)
-                                st.success(f"✅ Added {staff_full_name} ({staff_email}) to database")
+                                st.success(f"✅ Added {staff_name} ({staff_email}) to database")
                                 st.rerun()
                             else:
                                 st.error("❌ Failed to save staff member to database")
-                    else:
-                        st.error("Please complete all required fields (First Name, Last Name, Email, Password, Role)")
-    
+        
         st.markdown("---")
         
         # EXISTING STAFF
@@ -4496,8 +3125,7 @@ def render_admin_portal():
                                     edit_col1, edit_col2 = st.columns(2)
                                     
                                     with edit_col1:
-                                        edit_first_name = st.text_input("First Name", value=staff.get('first_name', staff['name'].split()[0] if staff['name'] else ''), key=f"edit_staff_first_{staff['id']}")
-                                        edit_last_name = st.text_input("Last Name", value=staff.get('last_name', ' '.join(staff['name'].split()[1:]) if len(staff['name'].split()) > 1 else ''), key=f"edit_staff_last_{staff['id']}")
+                                        edit_name = st.text_input("Name", value=staff['name'], key=f"edit_staff_name_{staff['id']}")
                                         edit_email = st.text_input("Email", value=staff['email'], key=f"edit_staff_email_{staff['id']}")
                                         edit_phone = st.text_input("Phone", value=staff.get('phone', ''), key=f"edit_staff_phone_{staff['id']}")
                                     
@@ -4520,16 +3148,13 @@ def render_admin_portal():
                                     col_save, col_cancel, col_delete = st.columns([1, 1, 1])
                                     with col_save:
                                         if st.form_submit_button("💾 Save Changes", type="primary"):
-                                            staff['first_name'] = edit_first_name.strip()
-                                            staff['last_name'] = edit_last_name.strip()
-                                            staff['name'] = f"{edit_first_name} {edit_last_name}".strip()
+                                            staff['name'] = edit_name
                                             staff['email'] = edit_email.lower().strip()
                                             staff['phone'] = edit_phone if edit_phone else None
                                             staff['role'] = edit_role
                                             staff['program'] = edit_program if edit_program != "All Programs" else None
                                             staff['receive_critical_emails'] = edit_receive_emails
                                             staff['notes'] = edit_notes if edit_notes else None
-                                            save_staff_to_db(staff)
                                             st.session_state.editing_staff = None
                                             st.success("✅ Updated")
                                             st.rerun()
@@ -4582,6 +3207,7 @@ def main():
     elif page == "incident_log": render_incident_log_page()
     elif page == "critical_incident": render_critical_incident_page()
     elif page == "student_analysis": render_student_analysis_page()
+    elif page == "student_dashboard": render_student_dashboard()
     elif page == "admin_portal": render_admin_portal()
     else: render_landing_page()
 
