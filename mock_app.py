@@ -308,174 +308,38 @@ def format_hypothesis(hyp):
         return "Unknown"
 
 def show_severity_guide():
-    """Enhanced Behaviour Severity Continuum matching uploaded image"""
-    st.markdown("""
-    <div style='background: white; padding: 1.5rem; border-radius: 8px; margin: 1rem 0; 
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0;'>
+    """Simplified Behaviour Severity Guide - More Reliable"""
+    with st.expander("📊 **Behaviour Severity Guide** (Click to view)", expanded=False):
+        st.markdown("### Behaviour Severity Continuum")
         
-        <div style='text-align: center; margin-bottom: 1.5rem;'>
-            <h2 style='color: #1a1a1a; font-weight: 700; font-size: 1.8rem; margin: 0;'>
-                Behaviour Severity Continuum
-            </h2>
-        </div>
+        col1, col2, col3, col4, col5 = st.columns(5)
         
-        <div style='display: grid; grid-template-columns: repeat(5, 1fr); gap: 0;'>
-            
-            <div style='background: #81b29a; padding: 1.2rem 0.8rem; border-right: 2px solid white;'>
-                <div style='text-align: center; margin-bottom: 1rem;'>
-                    <div style='color: white; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem;'>Level 1</div>
-                    <div style='color: white; font-weight: 600; font-size: 0.9rem; line-height: 1.3;'>
-                        Low Level /<br>Engaged
-                    </div>
-                </div>
-                <div style='background: rgba(255,255,255,0.2); padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem;'>
-                    <div style='color: white; font-weight: 600; font-size: 0.75rem; margin-bottom: 0.4rem;'>Examples:</div>
-                    <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                        <li>Following instructions</li>
-                        <li>On task</li>
-                        <li>Minor defiance</li>
-                        <li>Avoiding work</li>
-                        <li>Answering back</li>
-                        <li>Mumbling, huffing</li>
-                        <li>Passive peer conflict</li>
-                        <li>Attention seeking</li>
-                    </ul>
-                </div>
-                <div style='background: #6b9b7f; padding: 0.6rem; border-radius: 4px; margin-bottom: 0.5rem;'>
-                    <div style='color: white; font-weight: 700; font-size: 0.75rem; text-align: center;'>Teacher Priority</div>
-                </div>
-                <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                    <li>Redirect / provide options</li>
-                    <li>Give space</li>
-                    <li>Offer choice</li>
-                    <li>Acknowledge concern</li>
-                    <li>Maintain routine</li>
-                    <li>Active listening</li>
-                </ul>
-            </div>
-            
-            <div style='background: #f4d35e; padding: 1.2rem 0.8rem; border-right: 2px solid white;'>
-                <div style='text-align: center; margin-bottom: 1rem;'>
-                    <div style='color: #2c2c2c; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem;'>Level 2</div>
-                    <div style='color: #2c2c2c; font-weight: 600; font-size: 0.9rem; line-height: 1.3;'>
-                        Escalating /<br>Dysregulated
-                    </div>
-                </div>
-                <div style='background: rgba(255,255,255,0.3); padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem;'>
-                    <div style='color: #2c2c2c; font-weight: 600; font-size: 0.75rem; margin-bottom: 0.4rem;'>Examples:</div>
-                    <ul style='color: #2c2c2c; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                        <li>Raised voice</li>
-                        <li>Arguing, blaming</li>
-                        <li>Crying, frustration</li>
-                        <li>Pacing or mild exit attempts</li>
-                        <li>Throwing soft items (not dangerous)</li>
-                    </ul>
-                </div>
-                <div style='background: #d9b84d; padding: 0.6rem; border-radius: 4px; margin-bottom: 0.5rem;'>
-                    <div style='color: #2c2c2c; font-weight: 700; font-size: 0.75rem; text-align: center;'>Teacher Priority</div>
-                </div>
-                <ul style='color: #2c2c2c; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                    <li>Reduce demands</li>
-                    <li>Offer space / movement break</li>
-                    <li>Provide limited choices</li>
-                    <li>Avoid power struggles</li>
-                </ul>
-            </div>
-            
-            <div style='background: #ee8434; padding: 1.2rem 0.8rem; border-right: 2px solid white;'>
-                <div style='text-align: center; margin-bottom: 1rem;'>
-                    <div style='color: white; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem;'>Level 3</div>
-                    <div style='color: white; font-weight: 600; font-size: 0.9rem; line-height: 1.3;'>
-                        High Escalation /<br>Significant Risk
-                    </div>
-                </div>
-                <div style='background: rgba(255,255,255,0.2); padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem;'>
-                    <div style='color: white; font-weight: 600; font-size: 0.75rem; margin-bottom: 0.4rem;'>Examples:</div>
-                    <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                        <li>Yelling, swearing</li>
-                        <li>Slammed doors, hitting walls</li>
-                        <li>Throwing items with possible risk</li>
-                        <li>Attempting to run off</li>
-                        <li>Damaging property</li>
-                    </ul>
-                </div>
-                <div style='background: #d47230; padding: 0.6rem; border-radius: 4px; margin-bottom: 0.5rem;'>
-                    <div style='color: white; font-weight: 700; font-size: 0.75rem; text-align: center;'>Teacher Priority</div>
-                </div>
-                <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                    <li>Increase distance</li>
-                    <li>Notify leadership/support</li>
-                    <li>Remove audience</li>
-                    <li>Complete Critical Incident Form</li>
-                </ul>
-            </div>
-            
-            <div style='background: #c9555e; padding: 1.2rem 0.8rem; border-right: 2px solid white;'>
-                <div style='text-align: center; margin-bottom: 1rem;'>
-                    <div style='color: white; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem;'>Level 4</div>
-                    <div style='color: white; font-weight: 600; font-size: 0.9rem; line-height: 1.3;'>
-                        Dangerous<br>Behaviour
-                    </div>
-                </div>
-                <div style='background: rgba(255,255,255,0.2); padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem;'>
-                    <div style='color: white; font-weight: 600; font-size: 0.75rem; margin-bottom: 0.4rem;'>Examples:</div>
-                    <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                        <li>Attempts to hit, kick, grab</li>
-                        <li>Throwing dangerous objects</li>
-                        <li>Threats of violence</li>
-                        <li>Absconding into unsafe situations</li>
-                        <li>Beginning self-harm behaviour</li>
-                    </ul>
-                </div>
-                <div style='background: #b04850; padding: 0.6rem; border-radius: 4px; margin-bottom: 0.5rem;'>
-                    <div style='color: white; font-weight: 700; font-size: 0.75rem; text-align: center;'>Teacher Priority</div>
-                </div>
-                <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                    <li>Evacuate nearby students</li>
-                    <li>Leadership/response team activated</li>
-                    <li>Maintain safety distance</li>
-                </ul>
-            </div>
-            
-            <div style='background: #7d2e2e; padding: 1.2rem 0.8rem;'>
-                <div style='text-align: center; margin-bottom: 1rem;'>
-                    <div style='color: white; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem;'>Crisis</div>
-                    <div style='color: white; font-weight: 600; font-size: 0.9rem; line-height: 1.3;'>
-                        Crisis<br>Situation
-                    </div>
-                </div>
-                <div style='background: rgba(255,255,255,0.15); padding: 0.8rem; border-radius: 4px; margin-bottom: 0.8rem;'>
-                    <div style='color: white; font-weight: 600; font-size: 0.75rem; margin-bottom: 0.4rem;'>Examples:</div>
-                    <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                        <li>Physical violence causing or likely to cause injury</li>
-                        <li>Severe self-harm</li>
-                        <li>Use of weapons or dangerous items</li>
-                        <li>Full loss of control behaviour</li>
-                    </ul>
-                </div>
-                <div style='background: #5c2323; padding: 0.6rem; border-radius: 4px; margin-bottom: 0.5rem;'>
-                    <div style='color: white; font-weight: 700; font-size: 0.75rem; text-align: center;'>Teacher Priority</div>
-                </div>
-                <ul style='color: white; font-size: 0.7rem; margin: 0; padding-left: 1.2rem; line-height: 1.5;'>
-                    <li>Immediate emergency response</li>
-                    <li>Trained staff to manage situation</li>
-                    <li>Preserve evidence</li>
-                    <li>Complete Critical Incident Form</li>
-                </ul>
-            </div>
-            
-        </div>
+        with col1:
+            st.markdown("**:green[Level 1 - Low Level/Engaged]**")
+            st.caption("Examples: Following instructions, On task, Minor defiance, Avoiding work")
+            st.caption("Response: Redirect, Give space, Offer choice")
         
-        <div style='margin-top: 1.5rem; padding: 1rem; background: #fff3cd; border-radius: 6px; border-left: 4px solid #f59e0b;'>
-            <div style='color: #92400e; font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem;'>
-                WARNING: Critical Incident Documentation Required
-            </div>
-            <div style='color: #92400e; font-size: 0.85rem; line-height: 1.5;'>
-                <strong>Level 3 or above</strong> requires a Critical Incident ABCH Form to be completed immediately after the incident is resolved.
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+        with col2:
+            st.markdown("**:orange[Level 2 - Escalating]**")
+            st.caption("Examples: Raised voice, Arguing, Crying, Pacing")
+            st.caption("Response: Reduce demands, Offer break, Avoid power struggles")
+        
+        with col3:
+            st.markdown("**:red[Level 3 - High Escalation]**")
+            st.caption("Examples: Yelling, Slamming doors, Throwing items, Running off")
+            st.caption("Response: Increase distance, Notify leadership, **Complete Critical Form**")
+        
+        with col4:
+            st.markdown("**:red[Level 4 - Dangerous]**")
+            st.caption("Examples: Attempts to hit/kick, Throwing dangerous objects, Threats")
+            st.caption("Response: Evacuate students, Activate response team")
+        
+        with col5:
+            st.markdown("**:red[Crisis - Full Crisis]**")
+            st.caption("Examples: Physical violence causing injury, Severe self-harm, Weapons")
+            st.caption("Response: Emergency response, Preserve evidence")
+        
+        st.warning("⚠️ **Level 3 or above** requires a Critical Incident ABCH Form")
 def send_critical_incident_email(incident_data, student, staff_email, leader_email, admin_email):
     """Send email notification to all parties"""
     st.info(f"""📧 **Email Notification Sent**
@@ -1751,50 +1615,56 @@ def render_incident_log_page():
         
         # FORM SUBMISSION HANDLING - Must be INSIDE the form block to access widget values
         if submitted:
-            if not location or not behaviour or not antecedent or not interventions:
-                st.error("Please complete all required fields marked with *")
-            else:
-                new_id = str(uuid.uuid4())
-                is_critical = (severity >= 3) or manual_critical
-                
-                # Generate AI hypothesis
-                hyp_ai = generate_hypothesis_ai(antecedent, behaviour, "")
-                hypothesis_text = f"{hyp_ai['function']} {hyp_ai['item']}"
-                
-                rec = {
-                    "id": new_id, 
-                    "student_id": student_id, 
-                    "student_name": student["name"],
-                    "date": inc_date.isoformat(), 
-                    "time": inc_time.strftime("%H:%M:%S"),
-                    "day": inc_date.strftime("%A"), 
-                    "session": get_session_from_time(inc_time),
-                    "location": location, 
-                    "behaviour_type": behaviour, 
-                    "antecedent": antecedent,
-                    "intervention": interventions,  # Save as list
-                    "severity": severity,
-                    "reported_by": st.session_state.current_user["id"],  # Save staff ID
-                    "duration_minutes": duration, 
-                    "description": description or "", 
-                    "is_critical": is_critical,
-                    "hypothesis_function": hyp_ai['function'],
-                    "hypothesis_item": hyp_ai['item']
-                }
-                
-                # SAVE TO DATABASE FIRST
-                if save_incident_to_db(rec):
-                    # Then add to session state
-                    st.session_state.incidents.append(rec)
-                    st.success("✅ Incident logged successfully and saved to database")
-                    
-                    if is_critical:
-                        st.session_state.current_incident_id = new_id
-                        st.session_state.show_critical_prompt = True
-                        st.session_state.last_incident_info = {"severity": severity, "manual": manual_critical}
-                        st.rerun()
+            try:
+                if not location or not behaviour or not antecedent or not interventions:
+                    st.error("Please complete all required fields marked with *")
                 else:
-                    st.error("❌ Failed to save incident to database. Please try again.")
+                    new_id = str(uuid.uuid4())
+                    is_critical = (severity >= 3) or manual_critical
+                    
+                    # Generate AI hypothesis
+                    hyp_ai = generate_hypothesis_ai(antecedent, behaviour, "")
+                    hypothesis_text = f"{hyp_ai['function']} {hyp_ai['item']}"
+                    
+                    rec = {
+                        "id": new_id, 
+                        "student_id": student_id, 
+                        "student_name": student["name"],
+                        "date": inc_date.isoformat(), 
+                        "time": inc_time.strftime("%H:%M:%S"),
+                        "day": inc_date.strftime("%A"), 
+                        "session": get_session_from_time(inc_time),
+                        "location": location, 
+                        "behaviour_type": behaviour, 
+                        "antecedent": antecedent,
+                        "intervention": interventions,  # Save as list
+                        "severity": severity,
+                        "reported_by": st.session_state.current_user.get("id", "unknown") if st.session_state.current_user else "unknown",
+                        "duration_minutes": duration, 
+                        "description": description or "", 
+                        "is_critical": is_critical,
+                        "hypothesis_function": hyp_ai['function'],
+                        "hypothesis_item": hyp_ai['item']
+                    }
+                    
+                    # SAVE TO DATABASE FIRST
+                    if save_incident_to_db(rec):
+                        # Then add to session state
+                        st.session_state.incidents.append(rec)
+                        st.success("✅ Incident logged successfully and saved to database")
+                        
+                        if is_critical:
+                            st.session_state.current_incident_id = new_id
+                            st.session_state.show_critical_prompt = True
+                            st.session_state.last_incident_info = {"severity": severity, "manual": manual_critical}
+                            st.rerun()
+                    else:
+                        st.error("❌ Failed to save incident to database. Please try again.")
+            except Exception as e:
+                st.error(f"❌ ERROR logging incident: {str(e)}")
+                st.error(f"Error type: {type(e).__name__}")
+                import traceback
+                st.code(traceback.format_exc())
 
 
 def render_critical_incident_page():
