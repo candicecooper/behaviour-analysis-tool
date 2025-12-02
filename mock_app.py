@@ -335,7 +335,7 @@ def show_severity_guide():
             st.caption("Response: Evacuate students, Activate response team")
         
         with col5:
-            st.markdown("**:red[Crisis - Full Crisis]**")
+            st.markdown("**:red[Level 5 - Critical]**")
             st.caption("Examples: Physical violence causing injury, Severe self-harm, Weapons")
             st.caption("Response: Emergency response, Preserve evidence")
         
