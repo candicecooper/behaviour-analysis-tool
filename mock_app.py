@@ -358,7 +358,7 @@ Admin summary included for departmental log.
 
 
 def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, top_loc, top_session, risk_score, risk_level):
-    """Generate comprehensive BAP with matplotlib graphs (no Chrome/Kaleido needed)"""
+    """Generate comprehensive Behaviour Summary with matplotlib graphs (no Chrome/Kaleido needed)"""
     try:
         from docx import Document
         from docx.shared import Inches, Pt, RGBColor
@@ -395,7 +395,7 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
         # ====================================================================
         
         # TITLE PAGE
-        heading = doc.add_heading('Behaviour Analysis Plan', 0)
+        heading = doc.add_heading('Behaviour Summary', 0)
         for run in heading.runs:
             run.font.color.rgb = GREEN_RGB
             set_arial(run)
@@ -1043,7 +1043,7 @@ def generate_behaviour_analysis_plan_docx(student, full_df, top_ant, top_beh, to
         
     except Exception as e:
         import traceback
-        st.error(f"BAP Error: {e}")
+        st.error(f"Behaviour Summary Error: {e}")
         st.error(traceback.format_exc())
         return None
 
@@ -2035,8 +2035,8 @@ def render_student_analysis_page():
     # ENHANCED GRAPH 1: DAILY FREQUENCY
     # ================================================================
     
-    st.markdown("### 📅 Daily Incident Frequency - Regular vs Critical")
-    st.caption("Understanding the relationship between regular incidents and critical escalations")
+    st.markdown("### 📅 Daily Incident Frequency - Standard vs Critical")
+    st.caption("Understanding the relationship between standard incidents and critical escalations")
     
     fig1 = go.Figure()
     
@@ -2045,12 +2045,12 @@ def render_student_analysis_page():
         fig1.add_trace(go.Bar(
             x=daily_quick["date_parsed"], 
             y=daily_quick["count"],
-            name='Regular Incidents',
+            name='Standard Incidents',
             marker=dict(color='#3b82f6', line=dict(color='white', width=1)),
             text=daily_quick["count"],
             textposition='inside',
             textfont=dict(color='white', size=11, family='Arial Black'),
-            hovertemplate='<b>Date:</b> %{x}<br><b>Regular:</b> %{y}<extra></extra>'
+            hovertemplate='<b>Date:</b> %{x}<br><b>Standard:</b> %{y}<extra></extra>'
         ))
     
     if not crit_only_df.empty:
@@ -2085,7 +2085,7 @@ def render_student_analysis_page():
         escalation_rate = (len(crit_only_df) / len(quick_only_df)) * 100 if len(quick_only_df) > 0 else 0
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("Regular Incidents", len(quick_only_df), help="Severity 1-2")
+            st.metric("Standard Incidents", len(quick_only_df), help="Severity 1-2")
         with col2:
             st.metric("Critical Incidents", len(crit_only_df), help="Severity 3+")
         with col3:
@@ -2093,11 +2093,11 @@ def render_student_analysis_page():
     
     with st.expander("💡 Clinical Interpretation (Berry Street Body Domain)"):
         st.markdown(
-            "**Pattern Recognition:** Days with multiple regular incidents may predict critical escalation. "
-            "When you see clustering of regular incidents, it indicates the student's nervous system is already dysregulated.\n\n"
+            "**Pattern Recognition:** Days with multiple standard incidents may predict critical escalation. "
+            "When you see clustering of standard incidents, it indicates the student's nervous system is already dysregulated.\n\n"
             "**Berry Street Body:** On high-frequency days, increase proactive regulation - breathing exercises, "
             "movement breaks, sensory activities. The goal is to widen the Window of Tolerance before it narrows further.\n\n"
-            "**Prevention Strategy:** If you see 2+ regular incidents in one day, immediately implement intensive Body domain supports "
+            "**Prevention Strategy:** If you see 2+ standard incidents in one day, immediately implement intensive Body domain supports "
             "to prevent critical escalation."
         )
     st.markdown("---")
@@ -2106,7 +2106,7 @@ def render_student_analysis_page():
     # ENHANCED GRAPH 2: BEHAVIOURS
     # ================================================================
     
-    st.markdown("### 🎯 Behaviour Types - Regular vs Critical")
+    st.markdown("### 🎯 Behaviour Types - Standard vs Critical")
     st.caption("Which behaviours escalate to critical incidents?")
     
     all_behaviours = full_df["behaviour_type"].value_counts().head(6).index.tolist()
@@ -2122,11 +2122,11 @@ def render_student_analysis_page():
     fig2 = go.Figure()
     
     fig2.add_trace(go.Bar(
-        y=all_behaviours, x=quick_beh_counts, name='Regular', orientation='h',
+        y=all_behaviours, x=quick_beh_counts, name='Standard', orientation='h',
         marker=dict(color='#3b82f6', line=dict(color='white', width=1)),
         text=quick_beh_counts, textposition='inside',
         textfont=dict(color='white', size=11, family='Arial Black'),
-        hovertemplate='<b>%{y}</b><br>Regular: %{x}<extra></extra>'
+        hovertemplate='<b>%{y}</b><br>Standard: %{x}<extra></extra>'
     ))
     
     fig2.add_trace(go.Bar(
@@ -2195,7 +2195,7 @@ def render_student_analysis_page():
     fig3 = go.Figure()
     
     fig3.add_trace(go.Bar(
-        y=all_triggers, x=quick_ant_counts, name='Regular', orientation='h',
+        y=all_triggers, x=quick_ant_counts, name='Standard', orientation='h',
         marker=dict(color='#3b82f6', line=dict(color='white', width=1)),
         text=quick_ant_counts, textposition='inside',
         textfont=dict(color='white', size=11, family='Arial Black')
@@ -2259,7 +2259,7 @@ def render_student_analysis_page():
     if not quick_only_df.empty:
         fig4.add_trace(go.Scatter(
             x=quick_only_df["date_parsed"], y=quick_only_df["severity"],
-            mode='markers', name='Regular',
+            mode='markers', name='Standard',
             marker=dict(size=12, color='#3b82f6', opacity=0.7, line=dict(color='white', width=1.5)),
             hovertemplate='<b>Date:</b> %{x}<br><b>Severity:</b> %{y}<extra></extra>'
         ))
@@ -2337,7 +2337,7 @@ def render_student_analysis_page():
     fig5 = go.Figure()
     
     fig5.add_trace(go.Bar(
-        y=all_locations, x=quick_loc_counts, name='Regular', orientation='h',
+        y=all_locations, x=quick_loc_counts, name='Standard', orientation='h',
         marker=dict(color='#3b82f6', line=dict(color='white', width=1)),
         text=quick_loc_counts, textposition='inside',
         textfont=dict(color='white', size=11, family='Arial Black')
@@ -2407,7 +2407,7 @@ def render_student_analysis_page():
     fig6 = go.Figure()
     
     fig6.add_trace(go.Bar(
-        x=session_order, y=quick_session_counts, name='Regular',
+        x=session_order, y=quick_session_counts, name='Standard',
         marker=dict(color='#3b82f6', line=dict(color='white', width=1)),
         text=quick_session_counts, textposition='inside',
         textfont=dict(color='white', size=12, family='Arial Black')
@@ -2540,15 +2540,15 @@ def render_student_analysis_page():
         )
     
     with col2:
-        with st.spinner("Generating Behaviour Analysis Plan..."):
+        with st.spinner("Generating Behaviour Summary..."):
             docx_file = generate_behaviour_analysis_plan_docx(
                 student, full_df, top_ant, top_beh, top_loc, top_session, risk_score, risk_level
             )
         if docx_file:
             st.download_button(
-                "📄 Behaviour Analysis Plan (Word)",
+                "📄 Behaviour Summary (Word)",
                 docx_file,
-                file_name=f"BAP_{student['name'].replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.docx",
+                file_name=f"Behaviour_Summary_{student['name'].replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 use_container_width=True
             )
