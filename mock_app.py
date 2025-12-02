@@ -1221,7 +1221,9 @@ def load_students_from_db():
 def save_student_to_db(student):
     """Save a student to Supabase database"""
     if not supabase:
-        return False
+        # In mock mode, students are saved directly to session state
+        # No database operation needed, so return True
+        return True
     
     try:
         data = {
@@ -1248,7 +1250,9 @@ def save_student_to_db(student):
 def delete_student_from_db(student_id):  # Mock
     """Delete a student from Supabase database"""
     if not supabase:
-        return False
+        # In mock mode, students are deleted from session state
+        # No database operation needed, so return True
+        return True
     
     try:
         supabase.table('students').delete().eq('id', student_id).execute()
@@ -1287,7 +1291,9 @@ def load_staff_from_db():  # Mock
 def save_staff_to_db(staff_member):  # Mock
     """Save a staff member to Supabase database"""
     if not supabase:
-        return False
+        # In mock mode, staff are saved directly to session state
+        # No database operation needed, so return True
+        return True
     
     try:
         data = {
@@ -1315,7 +1321,9 @@ def save_staff_to_db(staff_member):  # Mock
 def delete_staff_from_db(staff_id):  # Mock
     """Delete a staff member from Supabase database"""
     if not supabase:
-        return False
+        # In mock mode, staff are deleted from session state
+        # No database operation needed, so return True
+        return True
     
     try:
         supabase.table('staff').delete().eq('id', staff_id).execute()
@@ -1364,7 +1372,9 @@ def load_incidents_from_db(student_id=None):  # Mock
 def save_incident_to_db(incident):  # Mock
     """Save an incident to Supabase database"""
     if not supabase:
-        return False
+        # In mock mode, incidents are saved directly to session state
+        # No database operation needed, so return True
+        return True
     
     try:
         data = {
@@ -1438,7 +1448,9 @@ def load_critical_incidents_from_db(student_id=None):  # Mock
 def save_critical_incident_to_db(critical):  # Mock
     """Save a critical incident to Supabase database"""
     if not supabase:
-        return False
+        # In mock mode, critical incidents are saved directly to session state
+        # No database operation needed, so return True
+        return True
     
     try:
         primary = critical.get('ABCH_primary', {})
